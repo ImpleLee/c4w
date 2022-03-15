@@ -236,11 +236,11 @@ fn print(field: &Field, piece: Option<&RotatedPiece>) {
     }
   }
   for i in (0..8).rev() {
-    print!("{} |", i);
+    eprint!("{} |", i);
     for j in 0..4 {
-      print!("{}", result[i][j]);
+      eprint!("{}", result[i][j]);
     }
-    println!("|");
+    eprintln!("|");
   }
-  println!("  +--------+");
+  eprintln!("  +--------+");
 }
