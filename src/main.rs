@@ -30,7 +30,7 @@ fn main() {
     eprintln!("{}/{:.2}: {}", i, expected + i as f64, diff);
     last_diff = diff;
   }
-  
+
   let values = evaluator.get_values();
   printer::MarkovAverage::print(&field2state, &values, &num2state);
 }
