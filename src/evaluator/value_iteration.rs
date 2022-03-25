@@ -1,19 +1,18 @@
 use super::*;
-use average::{Mean, Max, Estimate};
+use average::{Mean, Max, Estimate, Merge};
 use rayon::prelude::*;
-use ordered_float::NotNan;
 
-pub struct ValueIterator<'a> {
+pub struct ValueIterator<T: States + HasLength + Sync> {
   values: Vec<f64>,
-  nexts: &'a Vec<Vec<Vec<usize>>>,
+  states: T,
   epsilon: f64,
 }
 
-impl<'a> Evaluator<'a> for ValueIterator<'a> {
-  fn new(next: &'a Vec<Vec<Vec<usize>>>, epsilon: f64) -> Self {
+impl<T: States + HasLength + Sync> Evaluator<T> for ValueIterator<T> {
+  fn new(next: T, epsilon: f64) -> Self {
     Self {
       values: vec![0.0; next.len()],
-      nexts: next,
+      states: next,
       epsilon,
     }
   }
@@ -22,29 +21,75 @@ impl<'a> Evaluator<'a> for ValueIterator<'a> {
   }
 }
 
-impl<'a> Iterator for ValueIterator<'a> {
+impl<T: States + HasLength + Sync> Iterator for ValueIterator<T> {
   type Item = f64;
   fn next(&mut self) -> Option<Self::Item> {
-    let (new_values, diffs): (Vec<_>, Vec<_>) = (0..self.values.len()).into_par_iter().map(|j| {
+    let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len()).into_par_iter().map(|j| {
       let mut value = Mean::new();
-      for next in &self.nexts[j] {
+      let state = self.states.get_state(j).unwrap();
+      for next in state.next_pieces() {
         let mut this_value = Max::from_value(0.);
-        for &k in next {
-          this_value.add(self.values[k] + 1.);
+        for next_state in state.next_states(next) {
+          this_value.add(self.values[self.states.get_index(&next_state).unwrap()] + 1.);
         }
         value.add(this_value.max());
       }
       let new_value = value.mean();
       let old_value = self.values[j];
-      let diff = NotNan::new((new_value - old_value).abs()).unwrap();
+      let diff = (new_value - old_value).abs();
       (new_value, diff)
     }).unzip();
-    let diff = diffs.iter().max().unwrap().into_inner();
+    let diff = diffs.max();
     self.values = new_values;
     if diff < self.epsilon {
       None
     } else {
       Some(diff)
     }
+  }
+}
+
+struct MyMax(Max);
+
+impl MyMax {
+  fn max(&self) -> f64 {
+    self.0.max()
+  }
+}
+
+impl Default for MyMax {
+  fn default() -> Self {
+    MyMax(Max::default())
+  }
+}
+
+impl Estimate for MyMax {
+  fn add(&mut self, other: f64) {
+    self.0.add(other);
+  }
+  fn estimate(&self) -> f64 {
+    self.0.estimate()
+  }
+}
+
+impl Merge for MyMax {
+  fn merge(&mut self, other: &Self) {
+    self.0.merge(&other.0);
+  }
+}
+
+impl ParallelExtend<f64> for MyMax {
+  fn par_extend<I>(&mut self, par_iter: I)
+      where I: IntoParallelIterator<Item = f64>
+  {
+    self.merge(&par_iter.into_par_iter()
+      .fold(|| MyMax::default(), |mut acc, x| {
+        acc.add(x);
+        acc
+      })
+      .reduce(|| MyMax::default(), |mut acc, x| {
+        acc.merge(&x);
+        acc
+      }));
   }
 }

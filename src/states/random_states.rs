@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use crate::basics::{Field, Piece, PIECES};
 use super::*;
 use num_integer::Integer;
-use arrayvec::ArrayVec;
 
 pub struct RandomStates {
+  fields: Vec<Field>,
   continuations: Continuation,
   preview: usize,
   hold: bool,
@@ -13,7 +13,7 @@ pub struct RandomStates {
 impl<'a> States for &'a RandomStates {
   type State = RandomState<'a>;
   fn get_state(self: &Self, index: usize) -> Option<Self::State> {
-    let (seq, field) = index.div_rem(&self.continuations.fields.len());
+    let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState {
       states: self,
       field,
@@ -21,14 +21,16 @@ impl<'a> States for &'a RandomStates {
     })
   }
   fn get_index(self: &Self, state: &Self::State) -> Option<usize> {
-    Some(self.continuations.fields.len() * state.seq as usize + state.field)
+    Some(self.fields.len() * state.seq as usize + state.field)
   }
 }
 
 impl<'a> Creatable<'a> for RandomStates {
   fn new(continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>, preview: usize, hold: bool) -> Self {
+    let (fields, continuations) = Continuation::new(continuations);
     RandomStates {
-      continuations: Continuation::new(continuations),
+      fields,
+      continuations,
       preview,
       hold,
     }
@@ -37,7 +39,7 @@ impl<'a> Creatable<'a> for RandomStates {
 
 impl HasLength for &RandomStates {
   fn len(&self) -> usize {
-    self.continuations.fields.len() * PIECES.len().pow(self.preview as u32) * (if self.hold { PIECES.len() } else { 1 })
+    self.fields.len() * PIECES.len().pow(self.preview as u32) * (if self.hold { PIECES.len() } else { 1 })
   }
 }
 
@@ -49,7 +51,6 @@ pub struct RandomState<'s> {
 
 impl<'s> StateProxy for RandomState<'s> {
   type Branch = Piece;
-  type MarkovState = FieldWithPiece;
   type BranchIter = PieceIter;
   type SelfIter = RandomStateIter<'s>;
   fn next_pieces(self: &Self) -> Self::BranchIter {
@@ -81,8 +82,12 @@ impl<'s> StateProxy for RandomState<'s> {
       }
     }
   }
+}
+
+impl<'s> PrintableStateProxy for RandomState<'s> {
+  type MarkovState = FieldWithPiece;
   fn markov_state(self: &Self) -> Option<Self::MarkovState> {
-    let mut ret = FieldWithPiece(self.states.continuations.fields[self.field], None);
+    let mut ret = FieldWithPiece(self.states.fields[self.field], None);
     if self.states.hold {
       ret.1 = Some(self.seq.swap(Piece::I).1)
     }
@@ -172,35 +177,5 @@ impl Sequence for u64 {
   fn swap(self, piece: Piece) -> (Self, Piece) {
     let swapped = self % (PIECES.len() as u64);
     (self - swapped + piece as u64, Piece::num2piece(swapped as usize))
-  }
-}
-
-struct Continuation {
-  fields: Vec<Field>,
-  cont_index: Vec<ArrayVec<(usize, usize), 7>>,
-  continuations: Vec<usize>,
-}
-
-impl Continuation {
-  fn new(continuations: &HashMap<Field, HashMap<Piece, Vec<Field>>>) -> Self {
-    let fields = continuations.keys().cloned().collect::<Vec<Field>>();
-    let field2num = fields.iter().enumerate().map(|(i, f)| (f.clone(), i)).collect::<HashMap<_, _>>();
-    let mut cont_index: Vec<ArrayVec<(usize, usize), 7>> = Vec::new();
-    let mut cont = Vec::new();
-    for &field in &fields {
-      cont_index.push((0..PIECES.len()).map(|i| {
-        let begin = cont.len();
-        let piece = Piece::num2piece(i);
-        for &next_field in &continuations[&field][&piece] {
-          cont.push(field2num[&next_field]);
-        }
-        (begin, cont.len())
-      }).collect());
-    }
-    Continuation {
-      fields,
-      cont_index,
-      continuations: cont,
-    }
   }
 }

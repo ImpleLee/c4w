@@ -14,3 +14,4 @@ average = "0.13"
 rayon = "1.5.1"
 num-integer = "0.1.44"
 arrayvec = "0.7.2"
+dashmap = { version = "5.2.0", features = ["rayon"] }
