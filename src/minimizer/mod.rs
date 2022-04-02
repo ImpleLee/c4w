@@ -8,6 +8,7 @@ pub use raw::*;
 mod parallel;
 pub use parallel::*;
 use arrayvec::ArrayVec;
+use gcd::Gcd;
 
 pub trait Minimizer<T: States> {
   fn minimize(states: T) -> MinimizedStates<T>;
@@ -114,15 +115,67 @@ impl<T: States> GetNext for T {
       }
       next.sort_unstable();
       next.dedup();
+      next.shrink_to_fit();
       nexts.push(next);
     }
-    if nexts.len() > 1 && nexts[1..].iter().all(|x| x == &nexts[0]) {
-      let t = nexts[0].clone();
-      nexts.clear();
-      nexts.push(t);
+    nexts.sort_unstable();
+    let gcd = nexts.iter()
+      .count_same()
+      .fold(0, |a, (_v, b)| a.gcd(b));
+    if gcd > 1 {
+      nexts.into_iter().step_by(gcd).collect()
     } else {
-      nexts.sort();
+      nexts
     }
-    nexts
+  }
+}
+
+struct CountSame<I: IntoIterator> where I::Item: PartialEq {
+  iter: I::IntoIter,
+  last: Option<I::Item>,
+  count: usize,
+}
+
+impl<I: IntoIterator> Iterator for CountSame<I> where I::Item: PartialEq {
+  type Item = (I::Item, usize);
+  fn next(&mut self) -> Option<Self::Item> {
+    while let Some(item) = self.iter.next() {
+      if self.last.is_none() {
+        self.last = Some(item);
+        self.count = 1;
+      } else {
+        let last = self.last.take().unwrap();
+        if last == item {
+          self.last = Some(item);
+          self.count += 1;
+        } else {
+          self.last = Some(item);
+          let count = self.count;
+          self.count = 1;
+          return Some((last, count));
+        }
+      }
+    }
+    if self.last.is_some() {
+      let last = self.last.take().unwrap();
+      self.last = None;
+      Some((last, self.count))
+    } else {
+      None
+    }
+  }
+}
+
+trait CountSameExt<I: IntoIterator> where I::Item: PartialEq {
+  fn count_same(self) -> CountSame<I>;
+}
+
+impl<I: IntoIterator> CountSameExt<I> for I where I::Item: PartialEq {
+  fn count_same(self) -> CountSame<I> {
+    CountSame {
+      iter: self.into_iter(),
+      last: None,
+      count: 0,
+    }
   }
 }
