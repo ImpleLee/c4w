@@ -67,14 +67,21 @@ impl Continuation {
   pub fn is_empty(&self) -> bool {
     self.len() == 0
   }
-  pub fn add(&mut self, nexts: Vec<Vec<usize>>) {
-    let mut cont_index = ArrayVec::new();
-    for next in nexts {
-      let begin = self.continuations.len();
-      self.continuations.extend(next);
-      let end = self.continuations.len();
-      cont_index.push((begin, end));
+}
+
+impl<S: IntoIterator<Item=usize>, T: IntoIterator<Item=S>> FromIterator<T> for Continuation {
+  fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+    let mut cont = Continuation {cont_index: vec![], continuations: vec![]};
+    for next in iter {
+      let mut cont_index = ArrayVec::new();
+      for next in next {
+        let begin = cont.continuations.len();
+        cont.continuations.extend(next);
+        let end = cont.continuations.len();
+        cont_index.push((begin, end));
+      }
+      cont.cont_index.push(cont_index);
     }
-    self.cont_index.push(cont_index);
+    cont
   }
 }

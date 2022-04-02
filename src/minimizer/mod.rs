@@ -7,6 +7,7 @@ mod raw;
 pub use raw::*;
 mod parallel;
 pub use parallel::*;
+use arrayvec::ArrayVec;
 
 pub trait Minimizer<T: States> {
   fn minimize(states: T) -> MinimizedStates<T>;
@@ -95,5 +96,33 @@ impl<'a, T: States> Iterator for NextIter<'a, T> {
     };
     self.pos += 1;
     Some(result)
+  }
+}
+
+trait GetNext {
+  fn get_next(&self, i: usize, res: &Vec<usize>) -> ArrayVec<Vec<usize>, 7>;
+}
+
+impl<T: States> GetNext for T {
+  fn get_next(&self, i: usize, res: &Vec<usize>) -> ArrayVec<Vec<usize>, 7> {
+    let state = self.get_state(i).unwrap();
+    let mut nexts = ArrayVec::new();
+    for piece in state.next_pieces() {
+      let mut next = Vec::new();
+      for state in state.next_states(piece) {
+        next.push(res[self.get_index(&state).unwrap()]);
+      }
+      next.sort_unstable();
+      next.dedup();
+      nexts.push(next);
+    }
+    if nexts.len() > 1 && nexts[1..].iter().all(|x| x == &nexts[0]) {
+      let t = nexts[0].clone();
+      nexts.clear();
+      nexts.push(t);
+    } else {
+      nexts.sort();
+    }
+    nexts
   }
 }

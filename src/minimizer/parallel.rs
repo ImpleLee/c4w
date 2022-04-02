@@ -10,33 +10,15 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for ParallelMinimiz
   fn minimize(states: T) -> MinimizedStates<T> {
     let mut res = vec![0_usize; states.len()];
     let mut seeds = vec![0];
-    let get_next = |state: &T::State, res: &Vec<usize>| -> Vec<Vec<usize>> {
-      let mut nexts = Vec::new();
-      for piece in state.next_pieces() {
-        let mut next = Vec::new();
-        for state in state.next_states(piece) {
-          next.push(res[states.get_index(&state).unwrap()]);
-        }
-        next.sort_unstable();
-        next.dedup();
-        nexts.push(next);
-      }
-      if nexts.len() > 1 && nexts[1..].iter().all(|x| x == &nexts[0]) {
-        nexts = vec![nexts[0].clone()];
-      } else {
-        nexts.sort();
-      }
-      nexts
-    };
     loop {
       let knowns = seeds.par_iter()
-        .map(|&state| (get_next(&states.get_state(state).unwrap(), &res), state))
+        .map(|&state| (states.get_next(state, &res), state))
         .collect::<HashMap<_, _>>();
       let mut new_res = vec![0_usize; states.len()];
       let new_knowns = new_res.par_iter_mut()
         .enumerate()
         .fold(HashMap::new, |mut temp_knowns, (i, new_res)| {
-          let next = get_next(&states.get_state(i).unwrap(), &res);
+          let next = states.get_next(i, &res);
           *new_res = match knowns.get(&next) {
             Some(&known) => known,
             None => *temp_knowns.entry(next).or_insert(i),
@@ -77,11 +59,7 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for ParallelMinimiz
     res.par_iter_mut().for_each(|res| {
       *res = seed_map[res];
     });
-    let mut nexts = Continuation{ cont_index: vec![], continuations: vec![] };
-    for seed in seeds {
-      let next = get_next(&states.get_state(seed).unwrap(), &res);
-      nexts.add(next);
-    }
+    let nexts = seeds.into_iter().map(|seed| states.get_next(seed, &res)).collect();
     MinimizedStates {
       states,
       state2num: res,

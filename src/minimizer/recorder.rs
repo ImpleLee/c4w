@@ -12,29 +12,11 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for RecorderMinimiz
     let mut recorder = Recorder::new();
     recorder.seeds.push(0);
     loop {
-      let get_next = |state: &T::State| -> Vec<Vec<usize>> {
-        let mut nexts = Vec::new();
-        for piece in state.next_pieces() {
-          let mut next = Vec::new();
-          for state in state.next_states(piece) {
-            next.push(res[states.get_index(&state).unwrap()]);
-          }
-          next.sort_unstable();
-          next.dedup();
-          nexts.push(next);
-        }
-        if nexts.len() > 1 && nexts[1..].iter().all(|x| x == &nexts[0]) {
-          nexts = vec![nexts[0].clone()];
-        } else {
-          nexts.sort();
-        }
-        nexts
-      };
-      recorder.state2num = recorder.seeds.par_iter().enumerate().map(|(i, &seed)| (get_next(&states.get_state(seed).unwrap()), i)).collect();
+      recorder.state2num = recorder.seeds.par_iter().enumerate().map(|(i, &seed)| (states.get_next(seed, &res), i)).collect();
       assert_eq!(recorder.len(), recorder.seeds.len());
       let mut new_res = vec![usize::MAX; states.len()];
       let news = new_res.par_iter_mut().enumerate().filter_map(|(i, num)| {
-        let next = get_next(&states.get_state(i).unwrap());
+        let next = states.get_next(i, &res);
         match recorder.find(&next) {
           Some(j) => {
             *num = j;
@@ -45,11 +27,7 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for RecorderMinimiz
       }).collect::<Vec<_>>();
       eprintln!("unresolved: {}", news.len());
       if news.is_empty() {
-        let mut nexts = Continuation{ cont_index: vec![], continuations: vec![] };
-        for &seed in recorder.seeds.iter() {
-          let next = get_next(&states.get_state(seed).unwrap());
-          nexts.add(next);
-        }
+        let nexts = recorder.seeds.into_iter().map(|seed| states.get_next(seed, &res)).collect();
         return MinimizedStates {
           states,
           state2num: new_res,
@@ -57,7 +35,7 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for RecorderMinimiz
         };
       }
       for i in news {
-        let next = get_next(&states.get_state(i).unwrap());
+        let next = states.get_next(i, &res);
         new_res[i] = recorder.record(next, i);
       }
       res = new_res;
@@ -76,7 +54,7 @@ impl<T> Recorder<T> where T: Eq + Hash + Clone {
   fn new() -> Self {
     Self{ state2num: HashMap::new(), seeds: vec![] }
   }
-  
+
   fn record(&mut self, state: T, position: usize) -> usize {
     if let Some(num) = self.state2num.get(&state) {
       *num
@@ -87,15 +65,15 @@ impl<T> Recorder<T> where T: Eq + Hash + Clone {
       num
     }
   }
-  
+
   fn find(&self, state: &T) -> Option<usize> {
     self.state2num.get(state).copied()
   }
-  
+
   fn len(&self) -> usize {
     self.state2num.len()
   }
-  
+
   fn clear(&mut self) {
     self.state2num.clear();
   }
