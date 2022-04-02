@@ -49,17 +49,12 @@ impl<T: States + HasLength + Sync> Iterator for ValueIterator<T> {
   }
 }
 
+#[derive(Default)]
 struct MyMax(Max);
 
 impl MyMax {
   fn max(&self) -> f64 {
     self.0.max()
-  }
-}
-
-impl Default for MyMax {
-  fn default() -> Self {
-    MyMax(Max::default())
   }
 }
 
@@ -83,11 +78,11 @@ impl ParallelExtend<f64> for MyMax {
       where I: IntoParallelIterator<Item = f64>
   {
     self.merge(&par_iter.into_par_iter()
-      .fold(|| MyMax::default(), |mut acc, x| {
+      .fold(MyMax::default, |mut acc, x| {
         acc.add(x);
         acc
       })
-      .reduce(|| MyMax::default(), |mut acc, x| {
+      .reduce(MyMax::default, |mut acc, x| {
         acc.merge(&x);
         acc
       }));

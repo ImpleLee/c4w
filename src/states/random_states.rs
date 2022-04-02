@@ -12,7 +12,7 @@ pub struct RandomStates {
 
 impl<'a> States for &'a RandomStates {
   type State = RandomState<'a>;
-  fn get_state(self: &Self, index: usize) -> Option<Self::State> {
+  fn get_state(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState {
       states: self,
@@ -20,7 +20,7 @@ impl<'a> States for &'a RandomStates {
       seq: seq as u64,
     })
   }
-  fn get_index(self: &Self, state: &Self::State) -> Option<usize> {
+  fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
   }
 }
@@ -53,10 +53,10 @@ impl<'s> StateProxy for RandomState<'s> {
   type Branch = Piece;
   type BranchIter = PieceIter;
   type SelfIter = RandomStateIter<'s>;
-  fn next_pieces(self: &Self) -> Self::BranchIter {
+  fn next_pieces(&self) -> Self::BranchIter {
     PieceIter{ piece: 0 }
   }
-  fn next_states(self: &Self, piece: Self::Branch) -> Self::SelfIter {
+  fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
     let length = if self.states.hold { self.states.preview + 1 } else { self.states.preview };
     let (seq, current) = self.seq.push(piece, length);
     let (begin, end) = self.states.continuations.cont_index[self.field][current as usize];
@@ -65,7 +65,7 @@ impl<'s> StateProxy for RandomState<'s> {
       let (begin2, end2) = self.states.continuations.cont_index[self.field][current as usize];
       RandomStateIter {
         states: self.states,
-        seq: seq,
+        seq,
         seq2: Some(seq2),
         range: (begin, end),
         range2: Some((begin2, end2)),
@@ -74,7 +74,7 @@ impl<'s> StateProxy for RandomState<'s> {
     } else {
       RandomStateIter {
         states: self.states,
-        seq: seq,
+        seq,
         seq2: None,
         range: (begin, end),
         range2: None,
@@ -86,7 +86,7 @@ impl<'s> StateProxy for RandomState<'s> {
 
 impl<'s> PrintableStateProxy for RandomState<'s> {
   type MarkovState = FieldWithPiece;
-  fn markov_state(self: &Self) -> Option<Self::MarkovState> {
+  fn markov_state(&self) -> Option<Self::MarkovState> {
     let mut ret = FieldWithPiece(self.states.fields[self.field], None);
     if self.states.hold {
       ret.1 = Some(self.seq.swap(Piece::I).1)

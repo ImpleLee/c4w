@@ -20,7 +20,7 @@ fn main() {
   let num2state = RandomStates::new(&continuations, 5, true);
   eprintln!("{}", (&num2state).len());
 
-  let minimized = RecorderMinimizer::minimize(&num2state);
+  let minimized = ParallelMinimizer::minimize(&num2state);
 
   let mut last_diff: f64 = 1.;
   const EPS: f64 = 1e-10;

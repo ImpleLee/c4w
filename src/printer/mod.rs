@@ -5,13 +5,13 @@ use average::Mean;
 use ordered_float::NotNan;
 
 pub trait Printer {
-  fn print<T: States>(field2state: &Vec<usize>, values: &Vec<f64>, num2state: T) -> ();
+  fn print<T: States>(field2state: &[usize], values: &[f64], num2state: T);
 }
 
 // pub struct MarkovAverage();
 
 // impl Printer for MarkovAverage {
-//   fn print<T: States>(field2state: &Vec<usize>, values: &Vec<f64>, num2state: T) -> () {
+//   fn print<T: States>(field2state: &Vec<usize>, values: &Vec<f64>, num2state: T) {
 //     let mut states = field2state.iter().enumerate().filter_map(|(i, field)| {
 //       match (&num2state).get_state(i).unwrap().markov_state() {
 //         Some(state) => Some((state, values[*field])),

@@ -8,7 +8,7 @@ pub struct RecorderMinimizer {}
 
 impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for RecorderMinimizer {
   fn minimize(states: T) -> MinimizedStates<T> {
-    let mut res = vec![0 as usize; states.len()];
+    let mut res = vec![0_usize; states.len()];
     let mut recorder = Recorder::new();
     recorder.seeds.push(0);
     loop {
@@ -19,7 +19,7 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for RecorderMinimiz
           for state in state.next_states(piece) {
             next.push(res[states.get_index(&state).unwrap()]);
           }
-          next.sort();
+          next.sort_unstable();
           next.dedup();
           nexts.push(next);
         }
@@ -89,7 +89,7 @@ impl<T> Recorder<T> where T: Eq + Hash + Clone {
   }
   
   fn find(&self, state: &T) -> Option<usize> {
-    self.state2num.get(state).map(|&num| num)
+    self.state2num.get(state).copied()
   }
   
   fn len(&self) -> usize {

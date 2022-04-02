@@ -14,7 +14,7 @@
 // }
 
 // impl BagState {
-//   fn push(self: &Self, piece: Piece) -> Self {
+//   fn push(&self, piece: Piece) -> Self {
 //     let mut ret = self.clone();
 //     ret.preview.push_back(piece);
 //     match ret.bag {
@@ -117,11 +117,11 @@
 //     }
 //   }
 
-//   fn change_field(self: &Self, field: Field) -> Self {
+//   fn change_field(&self, field: Field) -> Self {
 //     BagState{ field, ..self.clone() }
 //   }
 
-//   fn add_piece(self: &Self, piece: Piece) -> Vec<(Self, Piece)> {
+//   fn add_piece(&self, piece: Piece) -> Vec<(Self, Piece)> {
 //     let mut vec = vec![];
 //     let ret = self.push(piece);
 //     let (ret, p) = ret.pull();

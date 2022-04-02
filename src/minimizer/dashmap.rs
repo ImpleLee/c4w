@@ -8,7 +8,7 @@ pub struct DashMapMinimizer {}
 
 impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for DashMapMinimizer {
   fn minimize(states: T) -> MinimizedStates<T> {
-    let mut res = vec![0 as usize; states.len()];
+    let mut res = vec![0_usize; states.len()];
     let get_next = |state: &T::State, res: &Vec<usize>| -> Vec<Vec<usize>> {
       let mut nexts = Vec::new();
       for piece in state.next_pieces() {
@@ -16,7 +16,7 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for DashMapMinimize
         for state in state.next_states(piece) {
           next.push(res[states.get_index(&state).unwrap()]);
         }
-        next.sort();
+        next.sort_unstable();
         next.dedup();
         nexts.push(next);
       }
@@ -70,10 +70,10 @@ impl<T: States + std::marker::Sync + HasLength> Minimizer<T> for DashMapMinimize
       let next = get_next(&states.get_state(seed).unwrap(), &res);
       nexts.add(next);
     }
-    return MinimizedStates {
+    MinimizedStates {
       states,
       state2num: res,
       nexts,
-    };
+    }
   }
 }

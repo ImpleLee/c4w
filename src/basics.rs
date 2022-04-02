@@ -7,9 +7,9 @@ impl std::fmt::Display for Field {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     let mut result = [["  "; 4]; 8];
     for i in 0..4 {
-      for j in 0..8 {
+      for (j, item) in result.iter_mut().enumerate() {
         if self.0[i] & (1 << j) != 0 {
-          result[j][i] = "XX";
+          item[i] = "XX";
         }
       }
     }

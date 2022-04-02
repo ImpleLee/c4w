@@ -42,10 +42,10 @@ fn get_piece(p: &Piece) -> Vec<RotatedPiece> {
     loop {
       result.push(piece);
       let p = piece.move_right();
-      if p.is_none() {
-        break;
+      if let Some(p) = p {
+        piece = p;
       } else {
-        piece = p.unwrap();
+        break;
       }
     }
   };
@@ -106,7 +106,7 @@ impl FieldDummy for Field {
   }
   fn clear_line(&self) -> (usize, Self) {
     let mut line_count = 0;
-    let mut field = self.clone();
+    let mut field = *self;
     if !field.clearable() {
       return (0, field);
     }
@@ -132,14 +132,14 @@ impl FieldDummy for Field {
     false
   }
   fn put(&self, piece: &RotatedPiece) -> Self {
-    let mut field = self.clone();
+    let mut field = *self;
     for i in 0..4 {
       field.0[i] |= piece.0[i];
     }
     field
   }
   fn possible_positions(&self, piece: &RotatedPiece) -> Vec<LineClear> {
-    let mut piece = piece.clone();
+    let mut piece = *piece;
     let mut result_fields = Vec::new();
     let mut last_push = false;
     let mut harddrop = true;
@@ -155,7 +155,7 @@ impl FieldDummy for Field {
           result_fields.push(if harddrop {
             LineClear::Harddrop(field)
           } else {
-            LineClear::Softdrop(self.clone(), piece.clone(), field)
+            LineClear::Softdrop(*self, piece, field)
           });
           this_push = true;
         }
@@ -164,10 +164,10 @@ impl FieldDummy for Field {
       }
       last_push = this_push;
       let p = piece.move_down();
-      if p.is_none() {
-        break;
+      if let Some(p) = p {
+        piece = p;
       } else {
-        piece = p.unwrap();
+        break;
       }
     }
     result_fields
@@ -216,20 +216,20 @@ fn main() {
 fn print(field: &Field, piece: Option<&RotatedPiece>) {
   let mut result = [["  "; 4]; 8];
   for i in 0..4 {
-    for j in 0..8 {
+    for (j, item) in result.iter_mut().enumerate() {
       if field.0[i] & (1 << j) != 0 {
-        result[j][i] = "XX";
+        item[i] = "XX";
       }
     }
   }
   if let Some(piece) = piece {
     for i in 0..4 {
-      for j in 0..8 {
+      for (j, item) in result.iter_mut().enumerate() {
         if piece.0[i] & (1 << j) != 0 {
-          if result[j][i] == "  " {
-            result[j][i] = "[]";
+          if item[i] == "  " {
+            item[i] = "[]";
           } else {
-            result[j][i] = "**";
+            item[i] = "**";
           }
         }
       }

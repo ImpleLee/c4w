@@ -3,7 +3,10 @@ mod dashmap;
 pub use self::dashmap::*;
 mod recorder;
 pub use recorder::*;
-
+mod raw;
+pub use raw::*;
+mod parallel;
+pub use parallel::*;
 
 pub trait Minimizer<T: States> {
   fn minimize(states: T) -> MinimizedStates<T>;
@@ -44,9 +47,9 @@ impl<'a, T: States> StateProxy for MinimizedState<'a, T> {
   type BranchIter = NumIter;
   type SelfIter = NextIter<'a, T>;
   fn next_pieces(self: &Self) -> Self::BranchIter {
-    NumIter { i: 0, I: self.states.nexts.cont_index[self.state].len() }
+    NumIter { i: 0, total: self.states.nexts.cont_index[self.state].len() }
   }
-  fn next_states(self: &Self, piece: Self::Branch) -> Self::SelfIter {
+  fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
     let range = self.states.nexts.cont_index[self.state][piece];
     NextIter {
       states: self.states,
@@ -57,14 +60,14 @@ impl<'a, T: States> StateProxy for MinimizedState<'a, T> {
 }
 
 pub struct NumIter {
-  I: usize,
+  total: usize,
   i: usize
 }
 
 impl Iterator for NumIter {
   type Item = usize;
   fn next(&mut self) -> Option<Self::Item> {
-    if self.i < self.I {
+    if self.i < self.total {
       let i = self.i;
       self.i += 1;
       Some(i)

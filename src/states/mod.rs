@@ -9,13 +9,13 @@ pub trait StateProxy {
   type Branch;
   type BranchIter: Iterator<Item=Self::Branch>;
   type SelfIter: Iterator<Item=Self>;
-  fn next_pieces(self: &Self) -> Self::BranchIter;
-  fn next_states(self: &Self, piece: Self::Branch) -> Self::SelfIter;
+  fn next_pieces(&self) -> Self::BranchIter;
+  fn next_states(&self, piece: Self::Branch) -> Self::SelfIter;
 }
 
 pub trait PrintableStateProxy: StateProxy {
   type MarkovState: std::fmt::Display + Ord + PartialEq + Clone + Send;
-  fn markov_state(self: &Self) -> Option<Self::MarkovState>;
+  fn markov_state(&self) -> Option<Self::MarkovState>;
 }
 
 pub trait Creatable<'a> {
@@ -24,6 +24,9 @@ pub trait Creatable<'a> {
 
 pub trait HasLength {
   fn len(&self) -> usize;
+  fn is_empty(&self) -> bool {
+    self.len() == 0
+  }
 }
 
 pub trait States {
@@ -40,7 +43,7 @@ pub struct Continuation {
 impl Continuation {
   fn new(continuations: &HashMap<Field, HashMap<Piece, Vec<Field>>>) -> (Vec<Field>, Self) {
     let fields = continuations.keys().cloned().collect::<Vec<Field>>();
-    let field2num = fields.iter().enumerate().map(|(i, f)| (f.clone(), i)).collect::<HashMap<_, _>>();
+    let field2num = fields.iter().enumerate().map(|(i, f)| (*f, i)).collect::<HashMap<_, _>>();
     let mut cont_index: Vec<ArrayVec<(usize, usize), 7>> = Vec::new();
     let mut cont = Vec::new();
     for &field in &fields {
@@ -60,6 +63,9 @@ impl Continuation {
   }
   pub fn len(&self) -> usize {
     self.cont_index.len()
+  }
+  pub fn is_empty(&self) -> bool {
+    self.len() == 0
   }
   pub fn add(&mut self, nexts: Vec<Vec<usize>>) {
     let mut cont_index = ArrayVec::new();
