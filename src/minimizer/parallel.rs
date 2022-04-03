@@ -17,7 +17,7 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for ParallelMinimizer {
         .collect::<HashMap<_, _>>();
       let mut new_state2num = vec![0_usize; states.len()];
       new_state2num.shrink_to_fit();
-      let locals = new_state2num
+      let local_seeds = new_state2num
         .par_iter_mut()
         .enumerate()
         .fold(HashMap::new, |mut local, (i, ret)| {
@@ -38,9 +38,9 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for ParallelMinimizer {
         .map(|(_, seeds)| seeds)
         .collect::<Vec<_>>();
       state2num = new_state2num;
-      seeds.extend(locals.iter().map(|seeds| seeds[0]));
+      seeds.extend(local_seeds.iter().map(|seeds| seeds[0]));
       eprintln!("minimized states: {}", seeds.len());
-      let seed_dedup = locals
+      let seed_dedup = local_seeds
         .into_par_iter()
         .flat_map(|seeds| {
           let seed0 = seeds[0];
