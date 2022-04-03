@@ -1,9 +1,10 @@
 mod random_states;
 pub use random_states::*;
-use arrayvec::ArrayVec;
-
-use std::collections::HashMap;
 use crate::basics::{Field, Piece, PIECES};
+
+use arrayvec::ArrayVec;
+use std::collections::{HashMap, VecDeque};
+use num_integer::Integer;
 
 pub trait StateProxy {
   type Branch;
@@ -83,5 +84,41 @@ impl<S: IntoIterator<Item=usize>, T: IntoIterator<Item=S>> FromIterator<T> for C
       cont.cont_index.push(cont_index);
     }
     cont
+  }
+}
+
+pub trait Sequence: Sized + Clone {
+  // if there is hold, it is pushed out
+  // the most recent piece becomes the hold
+  // (swap semantics)
+  fn push(self, piece: Piece, length: usize) -> (Self, Piece);
+  // actual swap
+  // exchange the hold and the piece
+  // should only be called if there is a hold
+  fn swap(self, piece: Piece) -> (Self, Piece);
+}
+
+impl Sequence for u64 {
+  fn push(self, piece: Piece, length: usize) -> (Self, Piece) {
+    let seq = self + piece as u64 * (PIECES.len() as u64).pow(length as u32);
+    let (seq, current) = seq.div_rem(&(PIECES.len() as u64));
+    (seq, Piece::num2piece(current as usize))
+  }
+  fn swap(self, piece: Piece) -> (Self, Piece) {
+    let swapped = self % (PIECES.len() as u64);
+    (self - swapped + piece as u64, Piece::num2piece(swapped as usize))
+  }
+}
+
+impl<'a> Sequence for VecDeque<Piece> {
+  fn push(mut self, piece: Piece, _: usize) -> (Self, Piece) {
+    self.push_back(piece);
+    let current = self.pop_front().unwrap();
+    (self, current)
+  }
+  fn swap(mut self, piece: Piece) -> (Self, Piece) {
+    let current = self.pop_front().unwrap();
+    self.push_front(piece);
+    (self, current)
   }
 }

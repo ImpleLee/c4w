@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::basics::{Field, Piece, PIECES};
 use super::*;
-use num_integer::Integer;
 
 pub struct RandomStates {
   fields: Vec<Field>,
@@ -11,7 +10,7 @@ pub struct RandomStates {
 }
 
 impl<'a> States for &'a RandomStates {
-  type State = RandomState<'a>;
+  type State = RandomState<'a, u64>;
   fn get_state(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState {
@@ -28,6 +27,7 @@ impl<'a> States for &'a RandomStates {
 impl<'a> Creatable<'a> for RandomStates {
   fn new(continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>, preview: usize, hold: bool) -> Self {
     let (fields, continuations) = Continuation::new(continuations);
+    assert!((fields.len() as f64).log2() + (PIECES.len() as f64).log2() * (preview as f64 + if hold { 1.0 } else { 0.0 }) <= u64::BITS as f64);
     RandomStates {
       fields,
       continuations,
@@ -43,25 +43,25 @@ impl HasLength for &RandomStates {
   }
 }
 
-pub struct RandomState<'s> {
+pub struct RandomState<'s, T: Sequence> {
   states: &'s RandomStates,
   field: usize,
-  seq: u64,
+  seq: T,
 }
 
-impl<'s> StateProxy for RandomState<'s> {
+impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
   type Branch = Piece;
   type BranchIter = PieceIter;
-  type SelfIter = RandomStateIter<'s>;
+  type SelfIter = RandomStateIter<'s, T>;
   fn next_pieces(&self) -> Self::BranchIter {
     PieceIter{ piece: 0 }
   }
   fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
     let length = if self.states.hold { self.states.preview + 1 } else { self.states.preview };
-    let (seq, current) = self.seq.push(piece, length);
+    let (seq, current) = self.seq.clone().push(piece, length);
     let (begin, end) = self.states.continuations.cont_index[self.field][current as usize];
     if self.states.hold {
-      let (seq2, current) = seq.swap(current);
+      let (seq2, current) = seq.clone().swap(current);
       let (begin2, end2) = self.states.continuations.cont_index[self.field][current as usize];
       RandomStateIter {
         states: self.states,
@@ -84,32 +84,21 @@ impl<'s> StateProxy for RandomState<'s> {
   }
 }
 
-impl<'s> PrintableStateProxy for RandomState<'s> {
-  type MarkovState = FieldWithPiece;
-  fn markov_state(&self) -> Option<Self::MarkovState> {
-    let mut ret = FieldWithPiece(self.states.fields[self.field], None);
-    if self.states.hold {
-      ret.1 = Some(self.seq.swap(Piece::I).1)
-    }
-    Some(ret)
-  }
-}
-
-pub struct RandomStateIter<'a> {
+pub struct RandomStateIter<'a, T: Sequence> {
   states: &'a RandomStates,
-  seq: u64,
-  seq2: Option<u64>,
+  seq: T,
+  seq2: Option<T>,
   range: (usize, usize),
   range2: Option<(usize, usize)>,
   pos: usize,
 }
 
-impl<'a> Iterator for RandomStateIter<'a> {
-  type Item = RandomState<'a>;
+impl<'a, T: Sequence> Iterator for RandomStateIter<'a, T> {
+  type Item = RandomState<'a, T>;
   fn next(&mut self) -> Option<Self::Item> {
     if self.pos >= self.range.1 {
       if let Some((begin, end)) = self.range2.take() {
-        self.seq = self.seq2.unwrap();
+        self.seq = self.seq2.take().unwrap();
         self.range = (begin, end);
         self.pos = begin;
         return self.next();
@@ -120,7 +109,7 @@ impl<'a> Iterator for RandomStateIter<'a> {
     let result = RandomState {
       states: self.states,
       field: self.states.continuations.continuations[self.pos],
-      seq: self.seq,
+      seq: self.seq.clone(),
     };
     self.pos += 1;
     Some(result)
@@ -154,28 +143,5 @@ impl std::fmt::Display for FieldWithPiece {
     } else {
       write!(f, "{}\nHold: None\n", self.0)
     }
-  }
-}
-
-trait Sequence: Sized {
-  // if there is hold, it is pushed out
-  // the most recent piece becomes the hold
-  // (swap semantics)
-  fn push(self, piece: Piece, length: usize) -> (Self, Piece);
-  // actual swap
-  // exchange the hold and the piece
-  // should only be called if there is a hold
-  fn swap(self, piece: Piece) -> (Self, Piece);
-}
-
-impl Sequence for u64 {
-  fn push(self, piece: Piece, length: usize) -> (Self, Piece) {
-    let seq = self + piece as u64 * (PIECES.len() as u64).pow(length as u32);
-    let (seq, current) = seq.div_rem(&(PIECES.len() as u64));
-    (seq, Piece::num2piece(current as usize))
-  }
-  fn swap(self, piece: Piece) -> (Self, Piece) {
-    let swapped = self % (PIECES.len() as u64);
-    (self - swapped + piece as u64, Piece::num2piece(swapped as usize))
   }
 }

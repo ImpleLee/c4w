@@ -4,5 +4,5 @@ use crate::states::*;
 
 pub trait Evaluator<T: States + HasLength>: Iterator<Item=f64> {
   fn new(next: T, epsilon: f64) -> Self;
-  fn get_values(&self) -> &Vec<f64>;
+  fn get_values(self) -> Vec<f64>;
 }

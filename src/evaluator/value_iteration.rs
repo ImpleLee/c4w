@@ -10,14 +10,16 @@ pub struct ValueIterator<T: States + HasLength + Sync> {
 
 impl<T: States + HasLength + Sync> Evaluator<T> for ValueIterator<T> {
   fn new(next: T, epsilon: f64) -> Self {
+    let mut values = vec![0.0; next.len()];
+    values.shrink_to_fit();
     Self {
-      values: vec![0.0; next.len()],
+      values,
       states: next,
       epsilon,
     }
   }
-  fn get_values(&self) -> &Vec<f64> {
-    &self.values
+  fn get_values(self) -> Vec<f64> {
+    self.values
   }
 }
 
@@ -41,6 +43,7 @@ impl<T: States + HasLength + Sync> Iterator for ValueIterator<T> {
     }).unzip();
     let diff = diffs.max();
     self.values = new_values;
+    self.values.shrink_to_fit();
     if diff < self.epsilon {
       None
     } else {
