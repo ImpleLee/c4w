@@ -32,7 +32,7 @@ impl RotatedPiece {
 #[derive(Copy, Clone)]
 enum LineClear {
   Harddrop(Field),
-  Softdrop(Field, RotatedPiece, Field),
+  Softdrop(Field, RotatedPiece, Field)
 }
 
 fn get_piece(p: &Piece) -> Vec<RotatedPiece> {

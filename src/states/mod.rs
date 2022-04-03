@@ -1,10 +1,10 @@
 mod random_states;
-pub use random_states::*;
 use crate::basics::{Field, Piece, PIECES};
+pub use random_states::*;
 
 use arrayvec::ArrayVec;
-use std::collections::{HashMap, VecDeque};
 use num_integer::Integer;
+use std::collections::{HashMap, VecDeque};
 
 pub trait StateProxy {
   type Branch;
@@ -15,12 +15,16 @@ pub trait StateProxy {
 }
 
 pub trait PrintableStateProxy: StateProxy {
-  type MarkovState: std::fmt::Display + Ord + PartialEq + Clone + Send;
+  type MarkovState: std::fmt::Display+Ord+PartialEq+Clone+Send;
   fn markov_state(&self) -> Option<Self::MarkovState>;
 }
 
 pub trait Creatable<'a> {
-  fn new(continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>, preview: usize, hold: bool) -> Self;
+  fn new(
+    continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>,
+    preview: usize,
+    hold: bool
+  ) -> Self;
 }
 
 pub trait HasLength {
@@ -38,7 +42,7 @@ pub trait States {
 
 pub struct Continuation {
   pub cont_index: Vec<ArrayVec<(usize, usize), 7>>,
-  pub continuations: Vec<usize>,
+  pub continuations: Vec<usize>
 }
 
 impl Continuation {
@@ -48,19 +52,20 @@ impl Continuation {
     let mut cont_index: Vec<ArrayVec<(usize, usize), 7>> = Vec::new();
     let mut cont = Vec::new();
     for &field in &fields {
-      cont_index.push((0..PIECES.len()).map(|i| {
-        let begin = cont.len();
-        let piece = Piece::num2piece(i);
-        for &next_field in &continuations[&field][&piece] {
-          cont.push(field2num[&next_field]);
-        }
-        (begin, cont.len())
-      }).collect());
+      cont_index.push(
+        (0..PIECES.len())
+          .map(|i| {
+            let begin = cont.len();
+            let piece = Piece::num2piece(i);
+            for &next_field in &continuations[&field][&piece] {
+              cont.push(field2num[&next_field]);
+            }
+            (begin, cont.len())
+          })
+          .collect()
+      );
     }
-    (fields, Continuation {
-      cont_index,
-      continuations: cont,
-    })
+    (fields, Continuation { cont_index, continuations: cont })
   }
   pub fn len(&self) -> usize {
     self.cont_index.len()
@@ -72,7 +77,7 @@ impl Continuation {
 
 impl<S: IntoIterator<Item=usize>, T: IntoIterator<Item=S>> FromIterator<T> for Continuation {
   fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
-    let mut cont = Continuation {cont_index: vec![], continuations: vec![]};
+    let mut cont = Continuation { cont_index: vec![], continuations: vec![] };
     for next in iter {
       let mut cont_index = ArrayVec::new();
       for next in next {
@@ -87,7 +92,7 @@ impl<S: IntoIterator<Item=usize>, T: IntoIterator<Item=S>> FromIterator<T> for C
   }
 }
 
-pub trait Sequence: Sized + Clone {
+pub trait Sequence: Sized+Clone {
   // if there is hold, it is pushed out
   // the most recent piece becomes the hold
   // (swap semantics)

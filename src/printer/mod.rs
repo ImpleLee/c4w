@@ -1,8 +1,8 @@
-use crate::states::{States, StateProxy};
-use rayon::prelude::*;
-use itertools::Itertools;
+use crate::states::{StateProxy, States};
 use average::Mean;
+use itertools::Itertools;
 use ordered_float::NotNan;
+use rayon::prelude::*;
 
 pub trait Printer {
   fn print<T: States>(field2state: &[usize], values: &[f64], num2state: T);
@@ -19,7 +19,7 @@ pub trait Printer {
 //       }
 //     }).collect::<Vec<_>>();
 //     states.par_sort_unstable_by_key(|(state, _)| state.clone());
-//     let mut values = 
+//     let mut values =
 //       states.into_iter()
 //       .group_by(|(state, _)| state.clone())
 //       .into_iter()

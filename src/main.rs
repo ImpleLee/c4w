@@ -1,20 +1,19 @@
 mod basics;
-mod states;
-mod minimizer;
 mod evaluator;
+mod minimizer;
 mod printer;
+mod states;
 
 use basics::*;
-use states::*;
-use minimizer::*;
 use evaluator::*;
+use minimizer::*;
 use printer::*;
+use states::*;
 use std::collections::HashMap;
 
 fn main() {
-  let continuations: HashMap<Field, HashMap<Piece, Vec<Field>>> = bincode::deserialize_from(
-    std::io::stdin().lock(),
-  ).unwrap();
+  let continuations: HashMap<Field, HashMap<Piece, Vec<Field>>> =
+    bincode::deserialize_from(std::io::stdin().lock()).unwrap();
   eprintln!("{}", continuations.len());
 
   let num2state = RandomStates::new(&continuations, 5, true);

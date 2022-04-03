@@ -1,23 +1,19 @@
-use std::collections::HashMap;
-use crate::basics::{Field, Piece, PIECES};
 use super::*;
+use crate::basics::{Field, Piece, PIECES};
+use std::collections::HashMap;
 
 pub struct RandomStates {
   fields: Vec<Field>,
   continuations: Continuation,
   preview: usize,
-  hold: bool,
+  hold: bool
 }
 
 impl<'a> States for &'a RandomStates {
   type State = RandomState<'a, u64>;
   fn get_state(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
-    Some(RandomState {
-      states: self,
-      field,
-      seq: seq as u64,
-    })
+    Some(RandomState { states: self, field, seq: seq as u64 })
   }
   fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
@@ -25,28 +21,33 @@ impl<'a> States for &'a RandomStates {
 }
 
 impl<'a> Creatable<'a> for RandomStates {
-  fn new(continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>, preview: usize, hold: bool) -> Self {
+  fn new(
+    continuations: &'a HashMap<Field, HashMap<Piece, Vec<Field>>>,
+    preview: usize,
+    hold: bool
+  ) -> Self {
     let (fields, continuations) = Continuation::new(continuations);
-    assert!((fields.len() as f64).log2() + (PIECES.len() as f64).log2() * (preview as f64 + if hold { 1.0 } else { 0.0 }) <= u64::BITS as f64);
-    RandomStates {
-      fields,
-      continuations,
-      preview,
-      hold,
-    }
+    assert!(
+      (fields.len() as f64).log2()
+        + (PIECES.len() as f64).log2() * (preview as f64 + if hold { 1.0 } else { 0.0 })
+        <= u64::BITS as f64
+    );
+    RandomStates { fields, continuations, preview, hold }
   }
 }
 
 impl HasLength for &RandomStates {
   fn len(&self) -> usize {
-    self.fields.len() * PIECES.len().pow(self.preview as u32) * (if self.hold { PIECES.len() } else { 1 })
+    self.fields.len()
+      * PIECES.len().pow(self.preview as u32)
+      * (if self.hold { PIECES.len() } else { 1 })
   }
 }
 
 pub struct RandomState<'s, T: Sequence> {
   states: &'s RandomStates,
   field: usize,
-  seq: T,
+  seq: T
 }
 
 impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
@@ -54,7 +55,7 @@ impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
   type BranchIter = PieceIter;
   type SelfIter = RandomStateIter<'s, T>;
   fn next_pieces(&self) -> Self::BranchIter {
-    PieceIter{ piece: 0 }
+    PieceIter { piece: 0 }
   }
   fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
     let length = if self.states.hold { self.states.preview + 1 } else { self.states.preview };
@@ -69,7 +70,7 @@ impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
         seq2: Some(seq2),
         range: (begin, end),
         range2: Some((begin2, end2)),
-        pos: begin,
+        pos: begin
       }
     } else {
       RandomStateIter {
@@ -78,7 +79,7 @@ impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
         seq2: None,
         range: (begin, end),
         range2: None,
-        pos: begin,
+        pos: begin
       }
     }
   }
@@ -90,7 +91,7 @@ pub struct RandomStateIter<'a, T: Sequence> {
   seq2: Option<T>,
   range: (usize, usize),
   range2: Option<(usize, usize)>,
-  pos: usize,
+  pos: usize
 }
 
 impl<'a, T: Sequence> Iterator for RandomStateIter<'a, T> {
@@ -109,7 +110,7 @@ impl<'a, T: Sequence> Iterator for RandomStateIter<'a, T> {
     let result = RandomState {
       states: self.states,
       field: self.states.continuations.continuations[self.pos],
-      seq: self.seq.clone(),
+      seq: self.seq.clone()
     };
     self.pos += 1;
     Some(result)
@@ -117,7 +118,7 @@ impl<'a, T: Sequence> Iterator for RandomStateIter<'a, T> {
 }
 
 pub struct PieceIter {
-  piece: usize,
+  piece: usize
 }
 
 impl Iterator for PieceIter {

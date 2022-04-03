@@ -1,46 +1,45 @@
 use super::*;
-use average::{Mean, Max, Estimate, Merge};
+use average::{Estimate, Max, Mean, Merge};
 use rayon::prelude::*;
 
-pub struct ValueIterator<T: States + HasLength + Sync> {
+pub struct ValueIterator<T: States+HasLength+Sync> {
   values: Vec<f64>,
   states: T,
-  epsilon: f64,
+  epsilon: f64
 }
 
-impl<T: States + HasLength + Sync> Evaluator<T> for ValueIterator<T> {
+impl<T: States+HasLength+Sync> Evaluator<T> for ValueIterator<T> {
   fn new(next: T, epsilon: f64) -> Self {
     let mut values = vec![0.0; next.len()];
     values.shrink_to_fit();
-    Self {
-      values,
-      states: next,
-      epsilon,
-    }
+    Self { values, states: next, epsilon }
   }
   fn get_values(self) -> Vec<f64> {
     self.values
   }
 }
 
-impl<T: States + HasLength + Sync> Iterator for ValueIterator<T> {
+impl<T: States+HasLength+Sync> Iterator for ValueIterator<T> {
   type Item = f64;
   fn next(&mut self) -> Option<Self::Item> {
-    let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len()).into_par_iter().map(|j| {
-      let mut value = Mean::new();
-      let state = self.states.get_state(j).unwrap();
-      for next in state.next_pieces() {
-        let mut this_value = Max::from_value(0.);
-        for next_state in state.next_states(next) {
-          this_value.add(self.values[self.states.get_index(&next_state).unwrap()] + 1.);
+    let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len())
+      .into_par_iter()
+      .map(|j| {
+        let mut value = Mean::new();
+        let state = self.states.get_state(j).unwrap();
+        for next in state.next_pieces() {
+          let mut this_value = Max::from_value(0.);
+          for next_state in state.next_states(next) {
+            this_value.add(self.values[self.states.get_index(&next_state).unwrap()] + 1.);
+          }
+          value.add(this_value.max());
         }
-        value.add(this_value.max());
-      }
-      let new_value = value.mean();
-      let old_value = self.values[j];
-      let diff = (new_value - old_value).abs();
-      (new_value, diff)
-    }).unzip();
+        let new_value = value.mean();
+        let old_value = self.values[j];
+        let diff = (new_value - old_value).abs();
+        (new_value, diff)
+      })
+      .unzip();
     let diff = diffs.max();
     self.values = new_values;
     self.values.shrink_to_fit();
@@ -77,17 +76,18 @@ impl Merge for MyMax {
 }
 
 impl ParallelExtend<f64> for MyMax {
-  fn par_extend<I>(&mut self, par_iter: I)
-      where I: IntoParallelIterator<Item = f64>
-  {
-    self.merge(&par_iter.into_par_iter()
-      .fold(MyMax::default, |mut acc, x| {
-        acc.add(x);
-        acc
-      })
-      .reduce(MyMax::default, |mut acc, x| {
-        acc.merge(&x);
-        acc
-      }));
+  fn par_extend<I: IntoParallelIterator<Item=f64>>(&mut self, par_iter: I) {
+    self.merge(
+      &par_iter
+        .into_par_iter()
+        .fold(MyMax::default, |mut acc, x| {
+          acc.add(x);
+          acc
+        })
+        .reduce(MyMax::default, |mut acc, x| {
+          acc.merge(&x);
+          acc
+        })
+    );
   }
 }

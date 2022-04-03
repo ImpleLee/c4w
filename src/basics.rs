@@ -13,9 +13,19 @@ impl std::fmt::Display for Field {
         }
       }
     }
-    write!(f, "{}", result.iter().enumerate().rev().map(|(i, line)| {
-      format!("{} |{}|", i, line.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(""))
-    }).collect::<Vec<_>>().join("\n"))
+    write!(
+      f,
+      "{}",
+      result
+        .iter()
+        .enumerate()
+        .rev()
+        .map(|(i, line)| {
+          format!("{} |{}|", i, line.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(""))
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+    )
   }
 }
 
@@ -27,7 +37,7 @@ pub enum Piece {
   S = 3,
   Z = 4,
   J = 5,
-  L = 6,
+  L = 6
 }
 
 impl Piece {
@@ -40,17 +50,10 @@ impl Piece {
       4 => Piece::Z,
       5 => Piece::J,
       6 => Piece::L,
-      _ => panic!("invalid piece number {}", num),
+      _ => panic!("invalid piece number {}", num)
     }
   }
 }
 
-pub const PIECES: [Piece; 7] = [
-  Piece::I,
-  Piece::O,
-  Piece::T,
-  Piece::S,
-  Piece::Z,
-  Piece::J,
-  Piece::L,
-];
+pub const PIECES: [Piece; 7] =
+  [Piece::I, Piece::O, Piece::T, Piece::S, Piece::Z, Piece::J, Piece::L];
