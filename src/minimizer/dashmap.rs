@@ -5,15 +5,15 @@ use std::collections::HashMap;
 
 pub struct DashMapMinimizer {}
 
-impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for DashMapMinimizer {
-  fn minimize(states: T) -> MinimizedStates<T> {
+impl Minimizer for DashMapMinimizer {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
     let mut seeds = vec![0];
     loop {
       let recorder = seeds
         .par_iter()
         .map(|&seed| {
-          let next = states.get_next(seed, &res);
+          let next = states.get_next_id(seed, &*res);
           (next, seed)
         })
         .collect::<HashMap<_, _>>();
@@ -22,7 +22,7 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for DashMapMinimizer {
         .par_iter_mut()
         .enumerate()
         .filter_map(|(i, num)| {
-          let next = states.get_next(i, &res);
+          let next = states.get_next_id(i, &*res);
           match recorder.get(&next) {
             Some(r) => {
               *num = *r;
@@ -38,7 +38,7 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for DashMapMinimizer {
       }
       let recorder = recorder.into_iter().collect::<DashMap<_, _>>();
       news.into_par_iter().for_each(|(i, num)| {
-        let next = states.get_next(i, &res);
+        let next = states.get_next_id(i, &*res);
         *num = *recorder.entry(next).or_insert(i).value();
       });
       res = new_res;
@@ -49,18 +49,18 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for DashMapMinimizer {
       .par_iter()
       .enumerate()
       .map(|(i, &seed)| {
-        let next = states.get_next(seed, &res);
+        let next = states.get_next_id(seed, &*res);
         (next, i)
       })
       .collect::<HashMap<_, _>>();
     res = (0..res.len())
       .into_par_iter()
       .map(|i| {
-        let next = states.get_next(i, &res);
+        let next = states.get_next_id(i, &*res);
         next2num[&next]
       })
       .collect();
-    let nexts = seeds.into_iter().map(|seed| states.get_next(seed, &res)).collect();
-    MinimizedStates { states, state2num: res, nexts }
+    let nexts = seeds.into_iter().map(|seed| states.get_next(seed, &*res)).collect();
+    MinimizedStates { state2num: res, nexts }
   }
 }

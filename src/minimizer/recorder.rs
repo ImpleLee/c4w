@@ -5,8 +5,8 @@ use std::hash::Hash;
 
 pub struct RecorderMinimizer {}
 
-impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for RecorderMinimizer {
-  fn minimize(states: T) -> MinimizedStates<T> {
+impl Minimizer for RecorderMinimizer {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
     let mut recorder = Recorder::new();
     recorder.seeds.push(0);
@@ -15,15 +15,16 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for RecorderMinimizer {
         .seeds
         .par_iter()
         .enumerate()
-        .map(|(i, &seed)| (states.get_next(seed, &res), i))
+        .map(|(i, &seed)| (states.get_next_id(seed, &*res), i))
         .collect();
       assert_eq!(recorder.len(), recorder.seeds.len());
       let mut new_res = vec![usize::MAX; states.len()];
       let news = new_res
-        .par_iter_mut()
+        //.par_iter_mut()
+        .iter_mut()
         .enumerate()
         .filter_map(|(i, num)| {
-          let next = states.get_next(i, &res);
+          let next = states.get_next_id(i, &*res);
           match recorder.find(&next) {
             Some(j) => {
               *num = j;
@@ -35,11 +36,11 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for RecorderMinimizer {
         .collect::<Vec<_>>();
       eprintln!("unresolved: {}", news.len());
       if news.is_empty() {
-        let nexts = recorder.seeds.into_iter().map(|seed| states.get_next(seed, &res)).collect();
-        return MinimizedStates { states, state2num: new_res, nexts };
+        let nexts = recorder.seeds.into_iter().map(|seed| states.get_next(seed, &*res)).collect();
+        return MinimizedStates { state2num: new_res, nexts };
       }
       for i in news {
-        let next = states.get_next(i, &res);
+        let next = states.get_next_id(i, &*res);
         new_res[i] = recorder.record(next, i);
       }
       res = new_res;

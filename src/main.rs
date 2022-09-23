@@ -2,24 +2,59 @@ mod basics;
 mod evaluator;
 mod minimizer;
 mod printer;
+mod pruner;
 mod states;
 
 use basics::*;
 use evaluator::*;
 use minimizer::*;
 use printer::*;
+use pruner::*;
 use states::*;
 use std::collections::HashMap;
+
+use ordered_float::NotNan;
 
 fn main() {
   let continuations: HashMap<Field, HashMap<Piece, Vec<Field>>> =
     bincode::deserialize_from(std::io::stdin().lock()).unwrap();
   eprintln!("{}", continuations.len());
 
-  let num2state = RandomStates::new(&continuations, 5, true);
+  let num2state = RandomStates::new(&continuations, 6, true);
   eprintln!("{}", (&num2state).len());
 
-  let minimized = ParallelMinimizer::minimize(&num2state);
+  let mut minimized = ConservMinimizer::minimize(&num2state);
+
+  loop {
+    eprintln!(
+      "Conservative minimization: nodes: {}, edges: {}, original: {}",
+      minimized.nexts.len(),
+      minimized.nexts.continuations.len(),
+      minimized.state2num.len()
+    );
+    let size = minimized.nexts.len();
+    minimized = ConservMinimizer::minimize_again(minimized);
+    if minimized.nexts.len() == size {
+      break;
+    }
+  }
+
+  minimized = ParallelMinimizer::minimize_again(minimized);
+
+  loop {
+    eprintln!(
+      "nodes: {}, edges: {}, original: {}",
+      minimized.nexts.len(),
+      minimized.nexts.continuations.len(),
+      minimized.state2num.len()
+    );
+    let merged: bool;
+    (minimized, merged) = PlainPruner::prune(minimized);
+    if !merged {
+      break;
+    }
+    minimized = ParallelMinimizer::minimize_again(minimized);
+  }
 
   let mut last_diff: f64 = 1.;
   const EPS: f64 = 1e-10;

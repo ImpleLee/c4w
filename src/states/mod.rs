@@ -40,6 +40,7 @@ pub trait States {
   fn get_index(&self, state: &Self::State) -> Option<usize>;
 }
 
+#[derive(Clone)]
 pub struct Continuation {
   pub cont_index: Vec<ArrayVec<(usize, usize), 7>>,
   pub continuations: Vec<usize>

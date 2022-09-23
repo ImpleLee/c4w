@@ -6,27 +6,36 @@ pub use recorder::*;
 mod raw;
 pub use raw::*;
 mod parallel;
-use arrayvec::ArrayVec;
-use gcd::Gcd;
 pub use parallel::*;
+mod conservative;
+use arrayvec::ArrayVec;
+pub use conservative::*;
+use gcd::Gcd;
+use rayon::prelude::*;
 
-pub trait Minimizer<T: States> {
-  fn minimize(states: T) -> MinimizedStates<T>;
+pub trait Minimizer {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates;
+  fn minimize_again(mut minimized: MinimizedStates) -> MinimizedStates {
+    let mut minimized_again = Self::minimize(&minimized);
+    minimized.state2num.par_iter_mut().for_each(|i| *i = minimized_again.state2num[*i]);
+    minimized_again.state2num = minimized.state2num;
+    minimized_again
+  }
 }
 
-pub struct MinimizedStates<T: States> {
-  states: T,
-  state2num: Vec<usize>,
+#[derive(Clone)]
+pub struct MinimizedStates {
+  pub state2num: Vec<usize>,
   pub nexts: Continuation
 }
 
-pub struct MinimizedState<'s, T: States> {
-  states: &'s MinimizedStates<T>,
+pub struct MinimizedState<'s> {
+  states: &'s MinimizedStates,
   state: usize
 }
 
-impl<'a, T: States> States for &'a MinimizedStates<T> {
-  type State = MinimizedState<'a, T>;
+impl<'a> States for &'a MinimizedStates {
+  type State = MinimizedState<'a>;
   fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(state.state)
   }
@@ -35,16 +44,16 @@ impl<'a, T: States> States for &'a MinimizedStates<T> {
   }
 }
 
-impl<T: States> HasLength for &MinimizedStates<T> {
+impl HasLength for &MinimizedStates {
   fn len(&self) -> usize {
     self.nexts.len()
   }
 }
 
-impl<'a, T: States> StateProxy for MinimizedState<'a, T> {
+impl<'a> StateProxy for MinimizedState<'a> {
   type Branch = usize;
   type BranchIter = NumIter;
-  type SelfIter = NextIter<'a, T>;
+  type SelfIter = NextIter<'a>;
   fn next_pieces(&self) -> Self::BranchIter {
     NumIter { i: 0, total: self.states.nexts.cont_index[self.state].len() }
   }
@@ -72,14 +81,14 @@ impl Iterator for NumIter {
   }
 }
 
-pub struct NextIter<'a, T: States> {
-  states: &'a MinimizedStates<T>,
+pub struct NextIter<'a> {
+  states: &'a MinimizedStates,
   range: (usize, usize),
   pos: usize
 }
 
-impl<'a, T: States> Iterator for NextIter<'a, T> {
-  type Item = MinimizedState<'a, T>;
+impl<'a> Iterator for NextIter<'a> {
+  type Item = MinimizedState<'a>;
   fn next(&mut self) -> Option<Self::Item> {
     if self.pos >= self.range.1 {
       return None;
@@ -92,23 +101,41 @@ impl<'a, T: States> Iterator for NextIter<'a, T> {
 }
 
 trait GetNext {
-  fn get_next(&self, i: usize, res: &[usize]) -> ArrayVec<Vec<usize>, 7>;
+  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+    &self,
+    i: usize,
+    res: U
+  ) -> ArrayVec<Vec<usize>, 7>;
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize>;
 }
 
 impl<T: States> GetNext for T {
-  fn get_next(&self, i: usize, res: &[usize]) -> ArrayVec<Vec<usize>, 7> {
+  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+    &self,
+    i: usize,
+    res: U
+  ) -> ArrayVec<Vec<usize>, 7> {
     let state = self.get_state(i).unwrap();
-    let mut nexts = ArrayVec::new();
-    for piece in state.next_pieces() {
-      let mut next = Vec::new();
-      for state in state.next_states(piece) {
-        next.push(res[self.get_index(&state).unwrap()]);
-      }
-      next.sort_unstable();
-      next.dedup();
-      next.shrink_to_fit();
-      nexts.push(next);
-    }
+    let mut nexts: ArrayVec<_, 7> = state
+      .next_pieces()
+      .into_iter()
+      .map(|piece| {
+        let mut next = state
+          .next_states(piece)
+          .map(|state| {
+            let i = self.get_index(&state).unwrap();
+            match res.into() {
+              Some(res) => res[i],
+              None => i
+            }
+          })
+          .collect::<Vec<_>>();
+        next.sort_unstable();
+        next.dedup();
+        next.shrink_to_fit();
+        next
+      })
+      .collect();
     nexts.sort_unstable();
     let gcd = nexts.iter().count_same().fold(0, |a, (_v, b)| a.gcd(b));
     if gcd > 1 {
@@ -117,9 +144,16 @@ impl<T: States> GetNext for T {
       nexts
     }
   }
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
+    let nexts = self.get_next(i, res);
+    let mut ret = vec![nexts.len()];
+    ret.extend(nexts.iter().map(|v| v.len()));
+    ret.extend(nexts.iter().flatten());
+    ret
+  }
 }
 
-struct CountSame<Item: PartialEq, I: IntoIterator<Item=Item>> {
+pub struct CountSame<Item: PartialEq, I: IntoIterator<Item=Item>> {
   iter: I::IntoIter,
   last: Option<I::Item>,
   count: usize
@@ -155,7 +189,7 @@ impl<Item: PartialEq, I: IntoIterator<Item=Item>> Iterator for CountSame<Item, I
   }
 }
 
-trait CountSameExt<Item: PartialEq, I: IntoIterator<Item=Item>> {
+pub trait CountSameExt<Item: PartialEq, I: IntoIterator<Item=Item>> {
   fn count_same(self) -> CountSame<Item, I>;
 }
 

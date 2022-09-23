@@ -4,16 +4,19 @@ use std::collections::{HashMap, HashSet};
 
 // uses tons of memory
 // not recommended unless you have a lot of memory
+// possibly wrong at `nexts`, but partition is right
 pub struct RawMinimizer {}
 
-impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for RawMinimizer {
-  fn minimize(states: T) -> MinimizedStates<T> {
+impl Minimizer for RawMinimizer {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
     let mut nexts = vec![];
     let mut last_length = 1;
     loop {
-      let next_set =
-        (0..res.len()).into_par_iter().map(|i| states.get_next(i, &res)).collect::<HashSet<_>>();
+      let next_set = (0..res.len())
+        .into_par_iter()
+        .map(|i| states.get_next_id(i, &*res))
+        .collect::<HashSet<_>>();
       if next_set.len() == last_length {
         break;
       }
@@ -24,9 +27,10 @@ impl<T: States+std::marker::Sync+HasLength> Minimizer<T> for RawMinimizer {
         nexts.par_iter().enumerate().map(|(i, next)| (next, i)).collect::<HashMap<_, _>>();
       res = (0..res.len())
         .into_par_iter()
-        .map(|i| next_map[&states.get_next(i, &res)])
+        .map(|i| next_map[&states.get_next_id(i, &*res)])
         .collect::<Vec<_>>();
     }
-    MinimizedStates { states, state2num: res, nexts: nexts.into_iter().collect() }
+    let nexts = (0..last_length).into_iter().map(|seed| states.get_next(seed, &*res)).collect();
+    MinimizedStates { state2num: res, nexts }
   }
 }
