@@ -6,14 +6,14 @@ use std::iter::Iterator;
 pub struct ConservMinimizer {}
 
 impl Minimizer for ConservMinimizer {
-  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
     let mut state_sorted = (0..states.len()).collect_vec();
     eprintln!("start sorting");
     state_sorted.par_sort_unstable_by_key(|&i| states.get_next_id(i, None));
     eprintln!("finish sorting");
     let state_order = state_sorted.clone();
-    let (_, _, indices) = state_sorted.iter_mut().fold(
-      (0, states.get_next_id(0, None), vec![0]),
+    let (_, _, inverse) = state_sorted.iter_mut().fold(
+      (0, states.get_next_id(state_order[0], None), vec![state_order[0]]),
       |(mut num, v, mut indices), i| {
         let next = states.get_next_id(*i, None);
         if next != v {
@@ -31,7 +31,6 @@ impl Minimizer for ConservMinimizer {
       .collect::<Vec<_>>();
     state_order.par_sort_unstable_by_key(|&(i, _)| i);
     let state2num = state_order.par_iter().map(|&(_, j)| j).collect::<Vec<_>>();
-    let nexts = indices.into_iter().map(|i| states.get_next(i, &*state2num)).collect();
-    MinimizedStates { state2num, nexts }
+    MappedStates { original: states, mapping: state2num, inverse }
   }
 }

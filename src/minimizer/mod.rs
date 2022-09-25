@@ -14,12 +14,73 @@ use gcd::Gcd;
 use rayon::prelude::*;
 
 pub trait Minimizer {
-  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates;
-  fn minimize_again(mut minimized: MinimizedStates) -> MinimizedStates {
-    let mut minimized_again = Self::minimize(&minimized);
-    minimized.state2num.par_iter_mut().for_each(|i| *i = minimized_again.state2num[*i]);
-    minimized_again.state2num = minimized.state2num;
-    minimized_again
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T>;
+}
+
+pub struct MappedStates<T: States> {
+  pub original: T,
+  pub mapping: Vec<usize>,
+  pub inverse: Vec<usize>,
+}
+
+impl<T: States> HasLength for MappedStates<T> {
+  fn len(&self) -> usize {
+    self.inverse.len()
+  }
+}
+
+impl<T: States> States for MappedStates<T> {
+  type State<'a> = MappedState<'a, T> where T: 'a;
+  fn get_state(&self, index: usize) -> Option<Self::State<'_>> {
+    self
+      .inverse
+      .get(index)
+      .map(|&index| MappedState { states: &self, index })
+  }
+  fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
+    self.mapping.get(state.index).cloned()
+  }
+}
+
+pub struct MappedState<'a, T: States> {
+  states: &'a MappedStates<T>,
+  index: usize,
+}
+
+impl<'a, T: States> StateProxy for MappedState<'a, T> {
+  type Branch = Vec<usize>;
+  type BranchIter = arrayvec::IntoIter<Vec<usize>, 7>;
+  type SelfIter = std::vec::IntoIter<Self>;
+  fn next_pieces(&self) -> Self::BranchIter {
+    self.states.original.get_next(self.index, &*self.states.mapping).into_iter()
+  }
+  fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
+    piece.into_iter().map(|i| MappedState { states: self.states, index: self.states.inverse[i] }).collect::<Vec<_>>().into_iter()
+  }
+}
+
+
+impl<T: States> MappedStates<MappedStates<T>> {
+  pub fn compose(mut self) -> MappedStates<T> {
+    self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
+    self.inverse.par_iter_mut().for_each(|i| *i = self.original.inverse[*i]);
+    self.original.inverse = self.inverse;
+    self.original
+  }
+}
+
+impl<T: States> MappedStates<T> {
+  pub fn concrete(self) -> MinimizedStates {
+    let nexts = self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
+    MinimizedStates { state2num: self.mapping, nexts }
+  }
+}
+
+impl MappedStates<MinimizedStates> {
+  pub fn compose(mut self) -> MinimizedStates {
+    self.original.nexts = self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
+    self.original.state2num.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
+    self.original
   }
 }
 
@@ -34,12 +95,12 @@ pub struct MinimizedState<'s> {
   state: usize
 }
 
-impl<'a> States<'a> for MinimizedStates {
-  type State = MinimizedState<'a>;
-  fn get_index(&'a self, state: &Self::State) -> Option<usize> {
+impl States for MinimizedStates {
+  type State<'a> = MinimizedState<'a>;
+  fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
     Some(state.state)
   }
-  fn get_state(&'a self, index: usize) -> Option<Self::State> {
+  fn get_state(&self, index: usize) -> Option<Self::State<'_>> {
     Some(MinimizedState { states: self, state: index })
   }
 }
@@ -100,18 +161,18 @@ impl<'a> Iterator for NextIter<'a> {
   }
 }
 
-trait GetNext<'b> {
+trait GetNext {
   fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
-    &'b self,
+    &self,
     i: usize,
     res: U
   ) -> ArrayVec<Vec<usize>, 7>;
-  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&'b self, i: usize, res: U) -> Vec<usize>;
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize>;
 }
 
-impl<'b, T: States<'b>> GetNext<'b> for T {
+impl<T: States> GetNext for T {
   fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
-    &'b self,
+    &self,
     i: usize,
     res: U
   ) -> ArrayVec<Vec<usize>, 7> {
@@ -144,7 +205,7 @@ impl<'b, T: States<'b>> GetNext<'b> for T {
       nexts
     }
   }
-  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&'b self, i: usize, res: U) -> Vec<usize> {
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
     let nexts = self.get_next(i, res);
     let mut ret = vec![nexts.len()];
     ret.extend(nexts.iter().map(|v| v.len()));

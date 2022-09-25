@@ -6,7 +6,7 @@ use std::iter::Iterator;
 pub struct ParallelMinimizer {}
 
 impl Minimizer for ParallelMinimizer {
-  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
+  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
     let mut state2num = vec![0_usize; states.len()];
     state2num.shrink_to_fit();
     let mut seeds = vec![0];
@@ -62,7 +62,6 @@ impl Minimizer for ParallelMinimizer {
     state2num.par_iter_mut().for_each(|res| {
       *res = seed_map[res];
     });
-    let nexts = seeds.into_iter().map(|seed| states.get_next(seed, &*state2num)).collect();
-    MinimizedStates { state2num, nexts }
+    MappedStates { original: states, mapping: state2num, inverse: seeds }
   }
 }

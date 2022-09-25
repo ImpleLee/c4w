@@ -34,10 +34,10 @@ pub trait HasLength {
   }
 }
 
-pub trait States<'a> {
-  type State: StateProxy;
-  fn get_state(&'a self, index: usize) -> Option<Self::State>;
-  fn get_index(&'a self, state: &Self::State) -> Option<usize>;
+pub trait States {
+  type State<'a>: StateProxy where Self: 'a;
+  fn get_state(&self, index: usize) -> Option<Self::State<'_>>;
+  fn get_index(&self, state: &Self::State<'_>) -> Option<usize>;
 }
 
 #[derive(Clone)]
@@ -68,11 +68,11 @@ impl Continuation {
     }
     (fields, Continuation { cont_index, continuations: cont })
   }
-  pub fn len(&self) -> usize {
+}
+
+impl HasLength for Continuation {
+  fn len(&self) -> usize {
     self.cont_index.len()
-  }
-  pub fn is_empty(&self) -> bool {
-    self.len() == 0
   }
 }
 

@@ -21,23 +21,21 @@ fn main() {
   let num2state = RandomStates::new(&continuations, 6, true);
   eprintln!("{}", (&num2state).len());
 
-  let mut minimized = ConservMinimizer::minimize(&num2state);
+  let mut minimized = ConservMinimizer::minimize(num2state);
 
   loop {
     eprintln!(
-      "Conservative minimization: nodes: {}, edges: {}, original: {}",
-      minimized.nexts.len(),
-      minimized.nexts.continuations.len(),
-      minimized.state2num.len()
+      "Conservative minimization: nodes: {}",
+      minimized.len(),
     );
-    let size = minimized.nexts.len();
-    minimized = ConservMinimizer::minimize_again(minimized);
-    if minimized.nexts.len() == size {
+    let size = minimized.len();
+    minimized = ConservMinimizer::minimize(minimized).compose();
+    if minimized.len() == size {
       break;
     }
   }
 
-  minimized = ParallelMinimizer::minimize_again(minimized);
+  let mut minimized = ParallelMinimizer::minimize(minimized).compose().concrete();
 
   loop {
     eprintln!(
@@ -51,7 +49,7 @@ fn main() {
     if !merged {
       break;
     }
-    minimized = ParallelMinimizer::minimize_again(minimized);
+    minimized = ParallelMinimizer::minimize(minimized).compose();
   }
 
   let mut last_diff: f64 = 1.;
