@@ -5,7 +5,7 @@ use ordered_float::NotNan;
 use rayon::prelude::*;
 
 pub trait Printer {
-  fn print<T: States>(field2state: &[usize], values: &[f64], num2state: T);
+  fn print<'a, T: States<'a>>(field2state: &[usize], values: &[f64], num2state: &'a T);
 }
 
 // pub struct MarkovAverage();

@@ -8,9 +8,9 @@ use std::collections::{HashMap, HashSet};
 pub struct RawMinimizer {}
 
 impl Minimizer for RawMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
+  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
-    let mut nexts = vec![];
+    let mut nexts;
     let mut last_length = 1;
     loop {
       let next_set = (0..res.len())

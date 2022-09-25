@@ -2,14 +2,14 @@ use super::*;
 use average::{Estimate, Max, Mean, Merge};
 use rayon::prelude::*;
 
-pub struct ValueIterator<T: States+HasLength+Sync> {
+pub struct ValueIterator<'a, T: States<'a>+HasLength+Sync> {
   values: Vec<f64>,
-  states: T,
+  states: &'a T,
   epsilon: f64
 }
 
-impl<T: States+HasLength+Sync> Evaluator<T> for ValueIterator<T> {
-  fn new(next: T, epsilon: f64) -> Self {
+impl<'a, T: States<'a>+HasLength+Sync> Evaluator<'a, T> for ValueIterator<'a, T> {
+  fn new(next: &'a T, epsilon: f64) -> Self {
     let mut values = vec![0.0; next.len()];
     values.shrink_to_fit();
     Self { values, states: next, epsilon }
@@ -19,7 +19,7 @@ impl<T: States+HasLength+Sync> Evaluator<T> for ValueIterator<T> {
   }
 }
 
-impl<T: States+HasLength+Sync> Iterator for ValueIterator<T> {
+impl<'a, T: States<'a>+HasLength+Sync> Iterator for ValueIterator<'a, T> {
   type Item = f64;
   fn next(&mut self) -> Option<Self::Item> {
     let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len())

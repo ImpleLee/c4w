@@ -6,7 +6,7 @@ use std::hash::Hash;
 pub struct RecorderMinimizer {}
 
 impl Minimizer for RecorderMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
+  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
     let mut recorder = Recorder::new();
     recorder.seeds.push(0);

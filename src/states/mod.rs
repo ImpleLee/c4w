@@ -34,10 +34,10 @@ pub trait HasLength {
   }
 }
 
-pub trait States {
+pub trait States<'a> {
   type State: StateProxy;
-  fn get_state(&self, index: usize) -> Option<Self::State>;
-  fn get_index(&self, state: &Self::State) -> Option<usize>;
+  fn get_state(&'a self, index: usize) -> Option<Self::State>;
+  fn get_index(&'a self, state: &Self::State) -> Option<usize>;
 }
 
 #[derive(Clone)]

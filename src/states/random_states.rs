@@ -9,13 +9,13 @@ pub struct RandomStates {
   hold: bool
 }
 
-impl<'a> States for &'a RandomStates {
+impl<'a> States<'a> for RandomStates {
   type State = RandomState<'a, u64>;
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn get_state(&'a self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState { states: self, field, seq: seq as u64 })
   }
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn get_index(&'a self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
   }
 }
@@ -36,7 +36,7 @@ impl<'a> Creatable<'a> for RandomStates {
   }
 }
 
-impl HasLength for &RandomStates {
+impl HasLength for RandomStates {
   fn len(&self) -> usize {
     self.fields.len()
       * PIECES.len().pow(self.preview as u32)

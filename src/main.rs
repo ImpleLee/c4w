@@ -13,8 +13,6 @@ use pruner::*;
 use states::*;
 use std::collections::HashMap;
 
-use ordered_float::NotNan;
-
 fn main() {
   let continuations: HashMap<Field, HashMap<Piece, Vec<Field>>> =
     bincode::deserialize_from(std::io::stdin().lock()).unwrap();

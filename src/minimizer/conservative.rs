@@ -6,7 +6,7 @@ use std::iter::Iterator;
 pub struct ConservMinimizer {}
 
 impl Minimizer for ConservMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
+  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
     let mut state_sorted = (0..states.len()).collect_vec();
     eprintln!("start sorting");
     state_sorted.par_sort_unstable_by_key(|&i| states.get_next_id(i, None));

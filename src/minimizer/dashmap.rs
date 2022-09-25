@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub struct DashMapMinimizer {}
 
 impl Minimizer for DashMapMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MinimizedStates {
+  fn minimize<'a, T: States<'a>+std::marker::Sync+HasLength>(states: &'a T) -> MinimizedStates {
     let mut res = vec![0_usize; states.len()];
     let mut seeds = vec![0];
     loop {

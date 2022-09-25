@@ -80,7 +80,7 @@ impl Pruner for PlainPruner {
   }
 }
 
-fn find_smaller<T: States>(states: T, u1: usize, u2: usize) -> Option<(usize, usize)> {
+fn find_smaller<'a, T: States<'a>>(states: &'a T, u1: usize, u2: usize) -> Option<(usize, usize)> {
   if u1 == u2 {
     return Some((u1, u2));
   }
