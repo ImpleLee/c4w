@@ -36,7 +36,7 @@ impl Minimizer for RecorderMinimizer {
         .collect::<Vec<_>>();
       eprintln!("unresolved: {}", news.len());
       if news.is_empty() {
-        return MappedStates { original: states, mapping: new_res, inverse: recorder.seeds }
+        return MappedStates { original: states, mapping: new_res, inverse: recorder.seeds };
       }
       for i in news {
         let next = states.get_next_id(i, &*res);

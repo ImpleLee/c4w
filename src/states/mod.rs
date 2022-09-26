@@ -35,7 +35,8 @@ pub trait HasLength {
 }
 
 pub trait States {
-  type State<'a>: StateProxy where Self: 'a;
+  type State<'a>: StateProxy
+  where Self: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State<'_>>;
   fn get_index(&self, state: &Self::State<'_>) -> Option<usize>;
 }

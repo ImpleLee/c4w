@@ -20,7 +20,7 @@ pub trait Minimizer {
 pub struct MappedStates<T: States> {
   pub original: T,
   pub mapping: Vec<usize>,
-  pub inverse: Vec<usize>,
+  pub inverse: Vec<usize>
 }
 
 impl<T: States> HasLength for MappedStates<T> {
@@ -32,10 +32,7 @@ impl<T: States> HasLength for MappedStates<T> {
 impl<T: States> States for MappedStates<T> {
   type State<'a> = MappedState<'a, T> where T: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State<'_>> {
-    self
-      .inverse
-      .get(index)
-      .map(|&index| MappedState { states: &self, index })
+    self.inverse.get(index).map(|&index| MappedState { states: &self, index })
   }
   fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
     self.mapping.get(state.index).cloned()
@@ -44,7 +41,7 @@ impl<T: States> States for MappedStates<T> {
 
 pub struct MappedState<'a, T: States> {
   states: &'a MappedStates<T>,
-  index: usize,
+  index: usize
 }
 
 impl<'a, T: States> StateProxy for MappedState<'a, T> {
@@ -55,10 +52,13 @@ impl<'a, T: States> StateProxy for MappedState<'a, T> {
     self.states.original.get_next(self.index, &*self.states.mapping).into_iter()
   }
   fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
-    piece.into_iter().map(|i| MappedState { states: self.states, index: self.states.inverse[i] }).collect::<Vec<_>>().into_iter()
+    piece
+      .into_iter()
+      .map(|i| MappedState { states: self.states, index: self.states.inverse[i] })
+      .collect::<Vec<_>>()
+      .into_iter()
   }
 }
-
 
 impl<T: States> MappedStates<MappedStates<T>> {
   pub fn compose(mut self) -> MappedStates<T> {
@@ -71,14 +71,16 @@ impl<T: States> MappedStates<MappedStates<T>> {
 
 impl<T: States> MappedStates<T> {
   pub fn concrete(self) -> MinimizedStates {
-    let nexts = self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
+    let nexts =
+      self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
     MinimizedStates { state2num: self.mapping, nexts }
   }
 }
 
 impl MappedStates<MinimizedStates> {
   pub fn compose(mut self) -> MinimizedStates {
-    self.original.nexts = self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
+    self.original.nexts =
+      self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
     self.original.state2num.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
     self.original
   }

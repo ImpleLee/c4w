@@ -33,6 +33,10 @@ impl Minimizer for RawMinimizer {
     let mut inverse = res.par_iter().cloned().enumerate().collect::<Vec<_>>();
     inverse.par_sort_unstable_by_key(|&(_, to)| to);
     inverse.dedup_by_key(|&mut (_, to)| to);
-    MappedStates { original: states, mapping: res, inverse: inverse.into_par_iter().map(|(from, _)| from).collect() }
+    MappedStates {
+      original: states,
+      mapping: res,
+      inverse: inverse.into_par_iter().map(|(from, _)| from).collect()
+    }
   }
 }

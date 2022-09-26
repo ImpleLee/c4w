@@ -24,10 +24,7 @@ fn main() {
   let mut minimized = ConservMinimizer::minimize(num2state);
 
   loop {
-    eprintln!(
-      "Conservative minimization: nodes: {}",
-      minimized.len(),
-    );
+    eprintln!("Conservative minimization: nodes: {}", minimized.len());
     let size = minimized.len();
     minimized = ConservMinimizer::minimize(minimized).compose();
     if minimized.len() == size {
