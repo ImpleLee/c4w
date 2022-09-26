@@ -70,35 +70,38 @@ impl<T: States> MappedStates<MappedStates<T>> {
 }
 
 impl<T: States> MappedStates<T> {
-  pub fn concrete(self) -> MinimizedStates {
+  pub fn concrete(self) -> ConcreteMappedStates<T> {
     let nexts =
       self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
-    MinimizedStates { state2num: self.mapping, nexts }
+    ConcreteMappedStates { original: self.original, mapping: self.mapping, nexts }
   }
 }
 
-impl MappedStates<MinimizedStates> {
-  pub fn compose(mut self) -> MinimizedStates {
+impl<T: States> MappedStates<ConcreteMappedStates<T>> {
+  // TODO: sort by self.inverse first to remap current mapping
+  // so that self.original.nexts can be incrementally changed without extra memory overhead
+  pub fn compose(mut self) -> ConcreteMappedStates<T> {
     self.original.nexts =
       self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
-    self.original.state2num.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
+    self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
     self.original
   }
 }
 
 #[derive(Clone)]
-pub struct MinimizedStates {
-  pub state2num: Vec<usize>,
+pub struct ConcreteMappedStates<T: States> {
+  pub original: T,
+  pub mapping: Vec<usize>,
   pub nexts: Continuation
 }
 
-pub struct MinimizedState<'s> {
-  states: &'s MinimizedStates,
+pub struct MinimizedState<'s, T: States> {
+  states: &'s ConcreteMappedStates<T>,
   state: usize
 }
 
-impl States for MinimizedStates {
-  type State<'a> = MinimizedState<'a>;
+impl<T: States> States for ConcreteMappedStates<T> {
+  type State<'a> = MinimizedState<'a, T> where T: 'a;
   fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
     Some(state.state)
   }
@@ -107,16 +110,16 @@ impl States for MinimizedStates {
   }
 }
 
-impl HasLength for MinimizedStates {
+impl<T: States> HasLength for ConcreteMappedStates<T> {
   fn len(&self) -> usize {
     self.nexts.len()
   }
 }
 
-impl<'a> StateProxy for MinimizedState<'a> {
+impl<'a, T: States> StateProxy for MinimizedState<'a, T> {
   type Branch = usize;
   type BranchIter = NumIter;
-  type SelfIter = NextIter<'a>;
+  type SelfIter = NextIter<'a, T>;
   fn next_pieces(&self) -> Self::BranchIter {
     NumIter { i: 0, total: self.states.nexts.cont_index[self.state].len() }
   }
@@ -144,14 +147,14 @@ impl Iterator for NumIter {
   }
 }
 
-pub struct NextIter<'a> {
-  states: &'a MinimizedStates,
+pub struct NextIter<'a, T: States> {
+  states: &'a ConcreteMappedStates<T>,
   range: (usize, usize),
   pos: usize
 }
 
-impl<'a> Iterator for NextIter<'a> {
-  type Item = MinimizedState<'a>;
+impl<'a, T: States> Iterator for NextIter<'a, T> {
+  type Item = MinimizedState<'a, T>;
   fn next(&mut self) -> Option<Self::Item> {
     if self.pos >= self.range.1 {
       return None;

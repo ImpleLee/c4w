@@ -21,25 +21,14 @@ fn main() {
   let num2state = RandomStates::new(&continuations, 6, true);
   eprintln!("{}", (&num2state).len());
 
-  let mut minimized = ConservMinimizer::minimize(num2state);
-
-  loop {
-    eprintln!("Conservative minimization: nodes: {}", minimized.len());
-    let size = minimized.len();
-    minimized = ConservMinimizer::minimize(minimized).compose();
-    if minimized.len() == size {
-      break;
-    }
-  }
-
-  let mut minimized = ParallelMinimizer::minimize(minimized).compose().concrete();
+  let mut minimized = ParallelMinimizer::minimize(num2state).concrete();
 
   loop {
     eprintln!(
       "nodes: {}, edges: {}, original: {}",
       minimized.nexts.len(),
       minimized.nexts.continuations.len(),
-      minimized.state2num.len()
+      minimized.mapping.len()
     );
     let merged: bool;
     (minimized, merged) = PlainPruner::prune(minimized);

@@ -9,7 +9,12 @@ use rayon::prelude::*;
 pub struct PlainPruner {}
 
 impl Pruner for PlainPruner {
-  fn prune(mut plain_states: MinimizedStates) -> (MinimizedStates, bool) {
+  // TODO: add another overlead to use MappedStates as input type instead
+  // to avoid extra memory overhead to concretalize MappedStates into MinimizedStates;
+  // when MinimizedStates are really expected, use MappedStates.concrete() first
+  fn prune<T: States+std::marker::Sync>(
+    mut plain_states: ConcreteMappedStates<T>
+  ) -> (ConcreteMappedStates<T>, bool) {
     let states = &plain_states;
     let mut greater_than = (0..states.len())
       .into_par_iter()

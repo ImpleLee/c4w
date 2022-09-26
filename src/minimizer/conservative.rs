@@ -30,7 +30,7 @@ impl Minimizer for ConservMinimizer {
       .map(|(&i, &j)| (i, j))
       .collect::<Vec<_>>();
     state_order.par_sort_unstable_by_key(|&(i, _)| i);
-    let state2num = state_order.par_iter().map(|&(_, j)| j).collect::<Vec<_>>();
-    MappedStates { original: states, mapping: state2num, inverse }
+    let mapping = state_order.par_iter().map(|&(_, j)| j).collect::<Vec<_>>();
+    MappedStates { original: states, mapping, inverse }
   }
 }
