@@ -1,6 +1,5 @@
 use crate::minimizer::*;
-use rayon::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 // uses tons of memory
 // not recommended unless you have a lot of memory
@@ -8,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 pub struct RawMinimizer {}
 
 impl Minimizer for RawMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
+  fn minimize<T: States>(states: T) -> MappedStates<T> {
     let mut res = vec![0_usize; states.len()];
     let mut nexts;
     let mut last_length = 1;
@@ -22,7 +21,7 @@ impl Minimizer for RawMinimizer {
       }
       last_length = next_set.len();
       eprintln!("minimized states: {}", last_length);
-      nexts = next_set.into_iter().collect::<Vec<_>>();
+      nexts = next_set.into_iter().collect_vec();
       let next_map =
         nexts.par_iter().enumerate().map(|(i, next)| (next.clone(), i)).collect::<HashMap<_, _>>();
       res = (0..res.len())

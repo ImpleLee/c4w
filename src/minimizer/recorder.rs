@@ -1,12 +1,10 @@
 use crate::minimizer::*;
-use rayon::prelude::*;
-use std::collections::HashMap;
 use std::hash::Hash;
 
 pub struct RecorderMinimizer {}
 
 impl Minimizer for RecorderMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
+  fn minimize<T: States>(states: T) -> MappedStates<T> {
     let mut mapping = vec![0_usize; states.len()];
     let mut recorder = Recorder::new();
     recorder.inverse.push(0);
@@ -33,7 +31,7 @@ impl Minimizer for RecorderMinimizer {
             None => Some(i)
           }
         })
-        .collect::<Vec<_>>();
+        .collect_vec();
       eprintln!("unresolved: {}", news.len());
       if news.is_empty() {
         return MappedStates { original: states, mapping: new_mapping, inverse: recorder.inverse };

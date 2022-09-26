@@ -1,5 +1,4 @@
 use crate::pruner::*;
-use crate::states::*;
 use arrayvec::ArrayVec;
 use gcd::Gcd;
 use hopcroft_karp::matching;
@@ -8,13 +7,11 @@ use rayon::prelude::*;
 
 pub struct PlainPruner {}
 
-impl Pruner for PlainPruner {
-  // TODO: add another overlead to use MappedStates as input type instead
-  // to avoid extra memory overhead to concretalize MappedStates into MinimizedStates;
-  // when MinimizedStates are really expected, use MappedStates.concrete() first
-  fn prune<T: States+std::marker::Sync>(
-    mut plain_states: ConcreteMappedStates<T>
-  ) -> (ConcreteMappedStates<T>, bool) {
+impl<T: States> Pruner<T> for PlainPruner {
+  fn prune(states: MappedStates<T>) -> ConcreteMappedStates<T> {
+    unimplemented!()
+  }
+  fn prune_concrete(mut plain_states: ConcreteMappedStates<T>) -> (ConcreteMappedStates<T>, bool) {
     let states = &plain_states;
     let mut greater_than = (0..states.len())
       .into_par_iter()
@@ -57,7 +54,7 @@ impl Pruner for PlainPruner {
         let mut new_nexts = nexts
           .into_iter()
           .filter_map(move |x| (!edges.contains(x)).then_some(x.clone()))
-          .collect::<Vec<_>>();
+          .collect_vec();
         let true_len = new_nexts.len();
         if *j - *i == true_len {
           return;

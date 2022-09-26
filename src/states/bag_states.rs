@@ -83,7 +83,7 @@
 //       }
 //     }
 //     println!("{}", res.len());
-//     let mut res = res.iter().map(|s| fields.iter().map(|f| s.change_field(**f)).collect::<Vec<_>>()).flatten().collect::<Vec<_>>();
+//     let mut res = res.iter().map(|s| fields.iter().map(|f| s.change_field(**f)).collect_vec()).flatten().collect_vec();
 //     if hold {
 //       let mut temp = vec![];
 //       for state in res {
@@ -103,7 +103,7 @@
 //         for p in n..self.preview.len() {
 //           temp.remove(&self.preview[p]);
 //         }
-//         temp.into_iter().collect::<Vec<_>>()
+//         temp.into_iter().collect_vec()
 //       }
 //       Bag::OneBag(ref bag) => {
 //         let mut res = vec![];

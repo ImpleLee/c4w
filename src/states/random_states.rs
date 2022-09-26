@@ -52,10 +52,10 @@ pub struct RandomState<'s, T: Sequence> {
 
 impl<'s, T: Sequence> StateProxy for RandomState<'s, T> {
   type Branch = Piece;
-  type BranchIter = PieceIter;
+  type BranchIter = std::iter::Cloned<std::slice::Iter<'static, Self::Branch>>;
   type SelfIter = RandomStateIter<'s, T>;
   fn next_pieces(&self) -> Self::BranchIter {
-    PieceIter { piece: 0 }
+    PIECES.iter().cloned()
   }
   fn next_states(&self, piece: Self::Branch) -> Self::SelfIter {
     let length = if self.states.hold { self.states.preview + 1 } else { self.states.preview };
@@ -114,23 +114,6 @@ impl<'a, T: Sequence> Iterator for RandomStateIter<'a, T> {
     };
     self.pos += 1;
     Some(result)
-  }
-}
-
-pub struct PieceIter {
-  piece: usize
-}
-
-impl Iterator for PieceIter {
-  type Item = Piece;
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.piece >= PIECES.len() {
-      None
-    } else {
-      let result = Piece::num2piece(self.piece);
-      self.piece += 1;
-      Some(result)
-    }
   }
 }
 

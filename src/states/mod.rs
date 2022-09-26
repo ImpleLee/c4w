@@ -1,10 +1,17 @@
 mod random_states;
-use crate::basics::{Field, Piece, PIECES};
 pub use random_states::*;
+mod mapped_states;
+pub use mapped_states::*;
+mod concrete_mapped_states;
+pub use concrete_mapped_states::*;
 
+use crate::basics::{Field, Piece, PIECES};
 use arrayvec::ArrayVec;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
+use itertools::Itertools;
+use gcd::Gcd;
+
 
 pub trait StateProxy {
   type Branch;
@@ -34,7 +41,7 @@ pub trait HasLength {
   }
 }
 
-pub trait States {
+pub trait States: HasLength+std::marker::Sync {
   type State<'a>: StateProxy
   where Self: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State<'_>>;
@@ -127,5 +134,105 @@ impl<'a> Sequence for VecDeque<Piece> {
     let current = self.pop_front().unwrap();
     self.push_front(piece);
     (self, current)
+  }
+}
+
+
+pub trait GetNext {
+  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+    &self,
+    i: usize,
+    res: U
+  ) -> ArrayVec<Vec<usize>, 7>;
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize>;
+}
+
+impl<T: States> GetNext for T {
+  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+    &self,
+    i: usize,
+    res: U
+  ) -> ArrayVec<Vec<usize>, 7> {
+    let state = self.get_state(i).unwrap();
+    let mut nexts: ArrayVec<_, 7> = state
+      .next_pieces()
+      .into_iter()
+      .map(|piece| {
+        let mut next = state
+          .next_states(piece)
+          .map(|state| {
+            let i = self.get_index(&state).unwrap();
+            match res.into() {
+              Some(res) => res[i],
+              None => i
+            }
+          })
+          .collect_vec();
+        next.sort_unstable();
+        next.dedup();
+        next.shrink_to_fit();
+        next
+      })
+      .collect();
+    nexts.sort_unstable();
+    let gcd = nexts.iter().count_same().fold(0, |a, (_v, b)| a.gcd(b));
+    if gcd > 1 {
+      nexts.into_iter().step_by(gcd).collect()
+    } else {
+      nexts
+    }
+  }
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
+    let nexts = self.get_next(i, res);
+    let mut ret = vec![nexts.len()];
+    ret.extend(nexts.iter().map(|v| v.len()));
+    ret.extend(nexts.iter().flatten());
+    ret
+  }
+}
+
+struct CountSame<Item: PartialEq, I: IntoIterator<Item=Item>> {
+  iter: I::IntoIter,
+  last: Option<I::Item>,
+  count: usize
+}
+
+impl<Item: PartialEq, I: IntoIterator<Item=Item>> Iterator for CountSame<Item, I> {
+  type Item = (I::Item, usize);
+  fn next(&mut self) -> Option<Self::Item> {
+    for item in self.iter.by_ref() {
+      if self.last.is_none() {
+        self.last = Some(item);
+        self.count = 1;
+      } else {
+        let last = self.last.take().unwrap();
+        if last == item {
+          self.last = Some(item);
+          self.count += 1;
+        } else {
+          self.last = Some(item);
+          let count = self.count;
+          self.count = 1;
+          return Some((last, count));
+        }
+      }
+    }
+    if self.last.is_some() {
+      let last = self.last.take().unwrap();
+      self.last = None;
+      Some((last, self.count))
+    } else {
+      None
+    }
+  }
+}
+
+trait CountSameExt<Item: PartialEq, I: IntoIterator<Item=Item>> {
+  fn count_same(self) -> CountSame<Item, I>;
+}
+
+impl<Item: PartialEq, I: IntoIterator<Item=Item>> CountSameExt<Item, I> for I {
+  fn count_same(self) -> CountSame<Item, I> {
+    CountSame { iter: self.into_iter(), last: None, count: 0 }
   }
 }

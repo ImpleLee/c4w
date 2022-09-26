@@ -31,7 +31,7 @@ fn main() {
       minimized.mapping.len()
     );
     let merged: bool;
-    (minimized, merged) = PlainPruner::prune(minimized);
+    (minimized, merged) = PlainPruner::prune_concrete(minimized);
     if !merged {
       break;
     }

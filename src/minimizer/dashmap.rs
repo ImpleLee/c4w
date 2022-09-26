@@ -1,12 +1,10 @@
 use crate::minimizer::*;
 use ::dashmap::DashMap;
-use rayon::prelude::*;
-use std::collections::HashMap;
 
 pub struct DashMapMinimizer {}
 
 impl Minimizer for DashMapMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
+  fn minimize<T: States>(states: T) -> MappedStates<T> {
     let mut res = vec![0_usize; states.len()];
     let mut seeds = vec![0];
     loop {
@@ -42,7 +40,7 @@ impl Minimizer for DashMapMinimizer {
         *num = *recorder.entry(next).or_insert(i).value();
       });
       res = new_res;
-      seeds = recorder.into_iter().map(|(_, seed)| seed).collect::<Vec<_>>();
+      seeds = recorder.into_iter().map(|(_, seed)| seed).collect_vec();
       eprintln!("minimized states: {}", seeds.len());
     }
     let next2num = seeds

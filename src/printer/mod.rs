@@ -17,14 +17,14 @@ pub trait Printer {
 //         Some(state) => Some((state, values[*field])),
 //         None => None
 //       }
-//     }).collect::<Vec<_>>();
+//     }).collect_vec();
 //     states.par_sort_unstable_by_key(|(state, _)| state.clone());
 //     let mut values =
 //       states.into_iter()
 //       .group_by(|(state, _)| state.clone())
 //       .into_iter()
 //       .map(|(f, states)| (f, states.map(|(_, v)| v).collect::<Mean>().mean()))
-//       .collect::<Vec<_>>();
+//       .collect_vec();
 //     values.par_sort_unstable_by_key(|&(_, value)| NotNan::new(-value).unwrap());
 //     for (field, value) in values.iter() {
 //       println!("{}", value);

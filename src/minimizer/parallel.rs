@@ -1,12 +1,9 @@
 use crate::minimizer::*;
-use rayon::prelude::*;
-use std::collections::HashMap;
-use std::iter::Iterator;
 
 pub struct ParallelMinimizer {}
 
 impl Minimizer for ParallelMinimizer {
-  fn minimize<T: States+std::marker::Sync+HasLength>(states: T) -> MappedStates<T> {
+  fn minimize<T: States>(states: T) -> MappedStates<T> {
     let mut mapping = vec![0_usize; states.len()];
     mapping.shrink_to_fit();
     let mut inverse = vec![0];
@@ -36,7 +33,7 @@ impl Minimizer for ParallelMinimizer {
           local1
         })
         .into_values()
-        .collect::<Vec<_>>();
+        .collect_vec();
       mapping = new_mapping;
       inverse.extend(local_seeds.iter().map(|seeds| seeds[0]));
       eprintln!("minimized states: {}", inverse.len());
