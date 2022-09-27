@@ -30,6 +30,7 @@ pub struct MappedState<'a, T: States> {
 
 impl<'a, T: States> StateProxy for MappedState<'a, T> {
   type Branch = Vec<usize>;
+  type Proxy = Self;
   type BranchIter = arrayvec::IntoIter<Self::Branch, 7>;
   type SelfIter = std::vec::IntoIter<Self>;
   fn next_pieces(&self) -> Self::BranchIter {

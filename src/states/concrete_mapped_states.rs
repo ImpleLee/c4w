@@ -30,6 +30,7 @@ impl<T: States> HasLength for ConcreteMappedStates<T> {
 
 impl<'a, T: States> StateProxy for ConcreteMappedState<'a, T> {
   type Branch = usize;
+  type Proxy = Self;
   type BranchIter = std::ops::Range<Self::Branch>;
   type SelfIter = std::vec::IntoIter<Self>;
   fn next_pieces(&self) -> Self::BranchIter {

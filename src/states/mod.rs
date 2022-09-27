@@ -4,19 +4,21 @@ mod mapped_states;
 pub use mapped_states::*;
 mod concrete_mapped_states;
 pub use concrete_mapped_states::*;
+mod field_sequence_states;
+pub use field_sequence_states::*;
 
 use crate::basics::{Field, Piece, PIECES};
 use arrayvec::ArrayVec;
+use gcd::Gcd;
+use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
-use itertools::Itertools;
-use gcd::Gcd;
 
-
-pub trait StateProxy {
+pub trait StateProxy: Sized {
   type Branch;
+  type Proxy: Into<Self>;
   type BranchIter: Iterator<Item=Self::Branch>;
-  type SelfIter: Iterator<Item=Self>;
+  type SelfIter: Iterator<Item=Self::Proxy>;
   fn next_pieces(&self) -> Self::BranchIter;
   fn next_states(&self, piece: Self::Branch) -> Self::SelfIter;
 }
@@ -137,7 +139,6 @@ impl<'a> Sequence for VecDeque<Piece> {
   }
 }
 
-
 pub trait GetNext {
   fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
     &self,
@@ -161,7 +162,7 @@ impl<T: States> GetNext for T {
         let mut next = state
           .next_states(piece)
           .map(|state| {
-            let i = self.get_index(&state).unwrap();
+            let i = self.get_index(&state.into()).unwrap();
             match res.into() {
               Some(res) => res[i],
               None => i
