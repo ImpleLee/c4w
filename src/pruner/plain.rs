@@ -22,8 +22,7 @@ impl<T: States> Pruner<T> for PlainPruner {
           .map(|piece| {
             let nexts =
               state.next_states(piece).map(|s| states.get_index(&s).unwrap()).collect_vec();
-            let edges = iproduct!(nexts.clone().into_iter(), nexts.into_iter()).collect_vec();
-            edges.into_iter().filter(|(x, y)| x < y)
+            iproduct!(nexts.clone().into_iter(), nexts.into_iter()).filter(|(x, y)| x < y)
           })
           .flatten()
           .collect_vec();
