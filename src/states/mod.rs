@@ -14,19 +14,20 @@ use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
 
-pub trait StateProxy: Sized {
+pub trait StateProxy<'a>: Sized+Copy {
+  type RealStates: States<State<'a>=Self>+'a;
   type Branch;
   type Proxy: Into<Self>;
   type BranchIter: Iterator<Item=Self::Branch>;
   type SelfIter: Iterator<Item=Self::Proxy>;
-  fn next_pieces(&self) -> Self::BranchIter;
-  fn next_states(&self, piece: Self::Branch) -> Self::SelfIter;
+  fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter;
+  fn next_states(self, states: &'a Self::RealStates, piece: Self::Branch) -> Self::SelfIter;
 }
 
-pub trait PrintableStateProxy: StateProxy {
+/* pub trait PrintableStateProxy: StateProxy {
   type MarkovState: std::fmt::Display+Ord+PartialEq+Clone+Send;
   fn markov_state(&self) -> Option<Self::MarkovState>;
-}
+} */
 
 pub trait Creatable<'a> {
   fn new(
@@ -44,7 +45,7 @@ pub trait HasLength {
 }
 
 pub trait States: HasLength+std::marker::Sync {
-  type State<'a>: StateProxy
+  type State<'a>: StateProxy<'a, RealStates=Self>
   where Self: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State<'_>>;
   fn get_index(&self, state: &Self::State<'_>) -> Option<usize>;
@@ -156,11 +157,11 @@ impl<T: States> GetNext for T {
   ) -> ArrayVec<Vec<usize>, 7> {
     let state = self.get_state(i).unwrap();
     let mut nexts: ArrayVec<_, 7> = state
-      .next_pieces()
+      .next_pieces(self)
       .into_iter()
       .map(|piece| {
         let mut next = state
-          .next_states(piece)
+          .next_states(self, piece)
           .map(|state| {
             let i = self.get_index(&state.into()).unwrap();
             match res.into() {

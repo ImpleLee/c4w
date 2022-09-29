@@ -18,10 +18,10 @@ impl<T: States> Pruner<T> for PlainPruner {
       .map(|i| {
         let state = states.get_state(i).unwrap();
         let mut edges = state
-          .next_pieces()
+          .next_pieces(states)
           .map(|piece| {
             let nexts =
-              state.next_states(piece).map(|s| states.get_index(&s).unwrap()).collect_vec();
+              state.next_states(states, piece).map(|s| states.get_index(&s).unwrap()).collect_vec();
             iproduct!(nexts.clone().into_iter(), nexts.into_iter()).filter(|(x, y)| x < y)
           })
           .flatten()
@@ -88,9 +88,9 @@ fn find_smaller<T: States>(states: &T, u1: usize, u2: usize) -> Option<(usize, u
   let get_nexts = |u: usize| -> ArrayVec<Vec<usize>, 7> {
     let s = states.get_state(u).unwrap();
     let mut nexts: ArrayVec<Vec<usize>, 7> = s
-      .next_pieces()
+      .next_pieces(states)
       .map(|piece| {
-        s.next_states(piece).map(|state| states.get_index(&state.into()).unwrap()).collect()
+        s.next_states(states, piece).map(|state| states.get_index(&state.into()).unwrap()).collect()
       })
       .collect();
     nexts.sort_unstable_by_key(|v| v.len());
