@@ -172,64 +172,48 @@ pub struct BagSequenceStates {
 impl SequenceStates for BagSequenceStates {
   fn new(preview: usize, hold: bool, base: &[Piece]) -> Self {
     type State = (VecDeque<usize>, Vec<bool>);
-    let next = |mut state: State| -> Box<dyn Iterator<Item=(usize, State)>> {
-      fn push(state: &mut State, i: usize) {
-        assert!(state.1[i]);
-        state.0.push_back(i);
-        state.1[i] = false;
-      }
-      fn pop(state: &mut State) -> usize {
-        state.0.pop_front().unwrap()
-      }
-      if state.1.iter().all(|available| !available) {
-        state.1 = (0..base.len()).map(|_| true).collect();
-      }
-      Box::new(state.1.clone().into_iter().enumerate().filter(|(_, b)| *b).map(move |(i, _)| {
-        let mut state = state.clone();
-        push(&mut state, i);
-        (pop(&mut state), state)
-      }))
-    };
-    #[derive(Default)]
-    struct Vocab<T: std::hash::Hash+Clone+Eq> {
-      mapping: HashMap<T, usize>,
-      inverse: Vec<T>
+    struct BFS<'a> {
+      mapping: HashMap<State, usize>,
+      inverse: VecDeque<State>,
+      base: &'a [Piece]
     }
-    impl<T: std::hash::Hash+Clone+Eq> Vocab<T> {
-      fn find_or_insert(&mut self, state: T) -> usize {
+    impl<'a> BFS<'a> {
+      fn find_or_insert(&mut self, state: State) -> usize {
         *self.mapping.entry(state.clone()).or_insert_with(|| {
           let v = self.inverse.len();
-          self.inverse.push(state);
+          self.inverse.push_back(state);
           v
         })
       }
-      fn find(&self, state: &T) -> Option<usize> {
-        self.mapping.get(state).copied()
-      }
-      fn len(&self) -> usize {
-        self.inverse.len()
-      }
     }
-    struct BFS<F: Fn(State) -> Box<dyn Iterator<Item=(usize, State)>>> {
-      vocab: Vocab<State>,
-      processed: usize,
-      my_next: F
-    }
-    impl<F: Fn(State) -> Box<dyn Iterator<Item=(usize, State)>>> Iterator for BFS<F> {
+    impl<'a> Iterator for BFS<'a> {
       type Item = std::vec::IntoIter<std::iter::Once<(usize, usize)>>;
       fn next(&mut self) -> Option<Self::Item> {
-        (self.processed < self.vocab.len()).then(move || {
-          let top = self.vocab.inverse[self.processed].clone();
-          self.processed += 1;
-          (self.my_next)(top)
-            .map(move |(piece, state)| std::iter::once((self.vocab.find_or_insert(state), piece)))
+        (!self.inverse.is_empty()).then(move || {
+          let mut top = self.inverse.pop_front().unwrap();
+          if top.1.iter().all(|available| !available) {
+            top.1 = (0..self.base.len()).map(|_| true).collect();
+          }
+          top
+            .1
+            .clone()
+            .into_iter()
+            .enumerate()
+            .filter(|(_, b)| *b)
+            .map(move |(i, _)| {
+              let mut top = top.clone();
+              top.1[i] = false;
+              top.0.push_back(i);
+              let piece = top.0.pop_front().unwrap();
+              std::iter::once((self.find_or_insert(top), piece))
+            })
             .collect_vec()
             .into_iter()
         })
       }
     }
-    let mut bfs = BFS { vocab: Vocab::default(), processed: 0, my_next: next };
-    bfs.vocab.find_or_insert({
+    let mut bfs = BFS { mapping: Default::default(), inverse: Default::default(), base };
+    bfs.find_or_insert({
       let seq: VecDeque<usize> = (0..preview).map(|i| i % base.len()).collect();
       let available =
         (0..base.len()).map(|i| i > seq.back().copied().unwrap_or(base.len())).collect();
@@ -249,13 +233,17 @@ impl States for BagSequenceStates {
 }
 impl HasLength for BagSequenceStates {
   fn len(&self) -> usize {
-    if self.hold { self.continuation.len() * self.base.len() } else { self.continuation.len() }
+    if self.hold {
+      self.continuation.len() * self.base.len()
+    } else {
+      self.continuation.len()
+    }
   }
 }
 
 #[derive(Clone, Copy)]
 pub struct BagSequenceState {
-  index: usize,
+  index: usize
 }
 impl<'a> StateProxy<'a> for BagSequenceState {
   type RealStates = BagSequenceStates;
@@ -264,17 +252,21 @@ impl<'a> StateProxy<'a> for BagSequenceState {
   type Proxy = (Self, Piece);
   type SelfIter = arrayvec::IntoIter<Self::Proxy, 2>;
   fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter {
-    0..states.continuation.cont_index[(if states.hold { self.index / states.base.len() } else { self.index })].len()
+    0..states.continuation.cont_index
+      [(if states.hold { self.index / states.base.len() } else { self.index })]
+    .len()
   }
   fn next_states(self, states: &'a Self::RealStates, piece: Self::Branch) -> Self::SelfIter {
     let mut av = ArrayVec::new();
     if states.hold {
       let (index, hold) = self.index.div_rem(&states.base.len());
-      let (target, current) = states.continuation.continuations[states.continuation.cont_index[index][piece].0];
-      av.push((Self { index: target*states.base.len() + current }, states.base[hold]));
-      av.push((Self { index: target*states.base.len() + hold }, states.base[current]));
+      let (target, current) =
+        states.continuation.continuations[states.continuation.cont_index[index][piece].0];
+      av.push((Self { index: target * states.base.len() + current }, states.base[hold]));
+      av.push((Self { index: target * states.base.len() + hold }, states.base[current]));
     } else {
-      let (target, current) = states.continuation.continuations[states.continuation.cont_index[self.index][piece].0];
+      let (target, current) =
+        states.continuation.continuations[states.continuation.cont_index[self.index][piece].0];
       av.push((Self { index: target }, states.base[current]));
     }
     av.into_iter()
