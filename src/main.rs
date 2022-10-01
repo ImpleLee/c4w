@@ -18,7 +18,7 @@ fn main() {
     bincode::deserialize_from(std::io::stdin().lock()).unwrap();
   eprintln!("{}", continuations.len());
 
-  let num2state = RandomStates::new(&continuations, 6, true);
+  let num2state = FieldSequenceStates::<BagSequenceStates>::new(&continuations, 6, true);
   eprintln!("{}", (&num2state).len());
 
   let mut minimized = ParallelMinimizer::minimize(num2state).concrete();

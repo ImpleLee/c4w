@@ -14,10 +14,19 @@ use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
 
+pub trait Gen<T> {
+  fn gen(self) -> T;
+}
+impl<T> Gen<T> for T {
+  fn gen(self) -> T {
+    self
+  }
+}
+
 pub trait StateProxy<'a>: Sized+Copy {
   type RealStates: States<State<'a>=Self>+'a;
   type Branch;
-  type Proxy: Into<Self>;
+  type Proxy: Gen<Self>;
   type BranchIter: Iterator<Item=Self::Branch>;
   type SelfIter: Iterator<Item=Self::Proxy>;
   fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter;
@@ -52,12 +61,12 @@ pub trait States: HasLength+std::marker::Sync {
 }
 
 #[derive(Clone)]
-pub struct Continuation {
+pub struct Continuation<T=usize> {
   pub cont_index: Vec<ArrayVec<(usize, usize), 7>>,
-  pub continuations: Vec<usize>
+  pub continuations: Vec<T>
 }
 
-impl Continuation {
+impl Continuation<usize> {
   fn new(continuations: &HashMap<Field, HashMap<Piece, Vec<Field>>>) -> (Vec<Field>, Self) {
     let fields = continuations.keys().cloned().collect::<Vec<Field>>();
     let field2num = fields.iter().enumerate().map(|(i, f)| (*f, i)).collect::<HashMap<_, _>>();
@@ -81,13 +90,13 @@ impl Continuation {
   }
 }
 
-impl HasLength for Continuation {
+impl<T> HasLength for Continuation<T> {
   fn len(&self) -> usize {
     self.cont_index.len()
   }
 }
 
-impl<S: IntoIterator<Item=usize>, T: IntoIterator<Item=S>> FromIterator<T> for Continuation {
+impl<A, S: IntoIterator<Item=A>, T: IntoIterator<Item=S>> FromIterator<T> for Continuation<A> {
   fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
     let mut cont = Continuation { cont_index: vec![], continuations: vec![] };
     for next in iter {
@@ -163,7 +172,7 @@ impl<T: States> GetNext for T {
         let mut next = state
           .next_states(self, piece)
           .map(|state| {
-            let i = self.get_index(&state.into()).unwrap();
+            let i = self.get_index(&state.gen()).unwrap();
             match res.into() {
               Some(res) => res[i],
               None => i

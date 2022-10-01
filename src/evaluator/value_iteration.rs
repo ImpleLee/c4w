@@ -30,7 +30,7 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
         for next in state.next_pieces(self.states) {
           let mut this_value = Max::from_value(0.);
           for next_state in state.next_states(self.states, next) {
-            this_value.add(self.values[self.states.get_index(&next_state.into()).unwrap()] + 1.);
+            this_value.add(self.values[self.states.get_index(&next_state.gen()).unwrap()] + 1.);
           }
           value.add(this_value.max());
         }
