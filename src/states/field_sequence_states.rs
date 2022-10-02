@@ -179,8 +179,9 @@ impl SequenceStates for BagSequenceStates {
     }
     impl<'a> BFS<'a> {
       fn find_or_insert(&mut self, state: State) -> usize {
+        let len = self.mapping.len();
         *self.mapping.entry(state.clone()).or_insert_with(|| {
-          let v = self.inverse.len();
+          let v = len;
           self.inverse.push_back(state);
           v
         })
