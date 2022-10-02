@@ -19,11 +19,12 @@ where for<'a> <S::State<'a> as StateProxy<'a>>::Proxy: Gen<usize>+Copy
 {
   type State<'a> = FieldSequenceState<'a, S> where Self: 'a;
   fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
-    self.sequence.get_index(&state.sequence).map(|seq| self.base_len() * seq + state.field_hold)
+    self.sequence.get_index(&state.sequence).map(|seq| self.base_len() * seq + self.fields.len() * state.hold + state.field)
   }
   fn get_state(&self, index: usize) -> Option<Self::State<'_>> {
     let (sequence, field_hold) = index.div_rem(&self.base_len());
-    self.sequence.get_state(sequence).map(|sequence| FieldSequenceState { field_hold, sequence })
+    let (hold, field) = field_hold.div_rem(&self.fields.len());
+    self.sequence.get_state(sequence).map(|sequence| FieldSequenceState { field, hold, sequence })
   }
 }
 impl<S: SequenceStates> HasLength for FieldSequenceStates<S>
@@ -68,7 +69,8 @@ where for<'a> <S::State<'a> as StateProxy<'a>>::Proxy: Gen<usize>+Copy
 pub struct FieldSequenceState<'s, S: SequenceStates+'s>
 where for<'a> <S::State<'a> as StateProxy<'a>>::Proxy: Gen<usize>+Copy
 {
-  field_hold: usize,
+  field: usize,
+  hold: usize,
   sequence: S::State<'s>
 }
 impl<'s, S: SequenceStates> StateProxy<'s> for FieldSequenceState<'s, S>
@@ -83,9 +85,7 @@ where for<'a> <S::State<'a> as StateProxy<'a>>::Proxy: Gen<usize>+Copy
     self.sequence.next_pieces(&states.sequence)
   }
   fn next_states(self, states: &'s Self::RealStates, piece: Self::Branch) -> Self::SelfIter {
-    let field = if states.hold { self.field_hold / states.base.len() } else { self.field_hold };
-    let hold = self.field_hold % states.base.len();
-    let indices = &states.continuations.cont_index[field];
+    let indices = &states.continuations.cont_index[self.field];
     self
       .sequence
       .next_states(&states.sequence, piece)
@@ -96,14 +96,16 @@ where for<'a> <S::State<'a> as StateProxy<'a>>::Proxy: Gen<usize>+Copy
         states.continuations.continuations[left..right]
           .iter()
           .map(move |&field| FieldSequenceState {
-            field_hold: if states.hold { field * states.base.len() + hold } else { field },
+            field,
+            hold: self.hold,
             sequence
           })
           .chain({
-            let (left, right) = indices[states.base[hold] as usize];
+            let (left, right) = indices[states.base[self.hold] as usize];
             states.continuations.continuations[left..right].iter().filter(|_| states.hold).map(
               move |&field| FieldSequenceState {
-                field_hold: field * states.base.len() + current,
+                field,
+                hold: current,
                 sequence
               }
             )
