@@ -195,10 +195,10 @@ impl<T: States> GetNext for T {
   }
   fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
     let nexts = self.get_next(i, res);
-    let mut ret = vec![nexts.len()];
-    ret.extend(nexts.iter().map(|v| v.len()));
-    ret.extend(nexts.iter().flatten());
-    ret
+    std::iter::once(nexts.len())
+      .chain(nexts.iter().map(|v| v.len()))
+      .chain(nexts.iter().flatten().cloned())
+      .collect()
   }
 }
 
