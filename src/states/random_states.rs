@@ -53,7 +53,6 @@ pub struct RandomState {
 impl<'s> StateProxy<'s> for RandomState {
   type RealStates = RandomStates;
   type Branch = Piece;
-  type Proxy = Self;
   type BranchIter = std::iter::Cloned<std::slice::Iter<'static, Self::Branch>>;
   type SelfIter = RandomStateIter<'s>;
   fn next_pieces(self, states: &'s Self::RealStates) -> Self::BranchIter {

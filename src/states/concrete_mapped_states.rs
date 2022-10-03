@@ -32,9 +32,8 @@ impl<T: States> HasLength for ConcreteMappedStates<T> {
 impl<'a, T: States> StateProxy<'a> for ConcreteMappedState<'a, T> {
   type RealStates = ConcreteMappedStates<T>;
   type Branch = usize;
-  type Proxy = Self;
   type BranchIter = std::ops::Range<Self::Branch>;
-  type SelfIter = Box<dyn Iterator<Item=Self::Proxy>+'a>;
+  type SelfIter = Box<dyn Iterator<Item=Self>+'a>;
   fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter {
     0..states.nexts.cont_index[self.state].len()
   }

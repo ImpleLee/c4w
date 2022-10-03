@@ -14,21 +14,11 @@ use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
 
-pub trait Gen<T> {
-  fn gen(self) -> T;
-}
-impl<T> Gen<T> for T {
-  fn gen(self) -> T {
-    self
-  }
-}
-
 pub trait StateProxy<'a>: Sized+Copy {
   type RealStates: States<State<'a>=Self>+'a;
   type Branch;
-  type Proxy: Gen<Self>;
   type BranchIter: Iterator<Item=Self::Branch>;
-  type SelfIter: Iterator<Item=Self::Proxy>;
+  type SelfIter: Iterator<Item=Self>;
   fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter;
   fn next_states(self, states: &'a Self::RealStates, piece: Self::Branch) -> Self::SelfIter;
 }
@@ -172,7 +162,7 @@ impl<T: States> GetNext for T {
         let mut next = state
           .next_states(self, piece)
           .map(|state| {
-            let i = self.get_index(&state.gen()).unwrap();
+            let i = self.get_index(&state).unwrap();
             match res.into() {
               Some(res) => res[i],
               None => i

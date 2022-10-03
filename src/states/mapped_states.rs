@@ -32,9 +32,8 @@ pub struct MappedState<'a, T: States> {
 impl<'a, T: States> StateProxy<'a> for MappedState<'a, T> {
   type RealStates = MappedStates<T>;
   type Branch = Vec<usize>;
-  type Proxy = Self;
   type BranchIter = arrayvec::IntoIter<Self::Branch, 7>;
-  type SelfIter = Box<dyn Iterator<Item=Self::Proxy>+'a>;
+  type SelfIter = Box<dyn Iterator<Item=Self>+'a>;
   fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter {
     states.original.get_next(self.index, &*states.mapping).into_iter()
   }

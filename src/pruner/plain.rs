@@ -90,7 +90,7 @@ fn find_smaller<T: States>(states: &T, u1: usize, u2: usize) -> Option<(usize, u
     let mut nexts: ArrayVec<Vec<usize>, 7> = s
       .next_pieces(states)
       .map(|piece| {
-        s.next_states(states, piece).map(|state| states.get_index(&state.gen()).unwrap()).collect()
+        s.next_states(states, piece).map(|state| states.get_index(&state).unwrap()).collect()
       })
       .collect();
     nexts.sort_unstable_by_key(|v| v.len());

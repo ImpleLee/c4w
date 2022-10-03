@@ -1,5 +1,9 @@
 use crate::states::*;
 
+pub trait Gen<T> {
+  fn gen(self) -> T;
+}
+
 pub trait SequenceStates: HasLength+std::marker::Sync {
   type State<'a>: SequenceStateProxy<'a, RealStates=Self>
   where Self: 'a;
@@ -74,8 +78,7 @@ impl<'s, S: SequenceStates> StateProxy<'s> for FieldSequenceState<'s, S> {
   type RealStates = FieldSequenceStates<S>;
   type Branch = <S::State<'s> as SequenceStateProxy<'s>>::Proxy;
   type BranchIter = <S::State<'s> as SequenceStateProxy<'s>>::ProxyIter;
-  type Proxy = Self;
-  type SelfIter = std::vec::IntoIter<Self::Proxy>;
+  type SelfIter = std::vec::IntoIter<Self>;
   fn next_pieces(self, states: &'s Self::RealStates) -> Self::BranchIter {
     self.sequence.next_pieces(&states.sequence)
   }
