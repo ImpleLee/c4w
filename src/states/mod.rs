@@ -14,15 +14,6 @@ use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
 
-pub trait StateProxy<'a>: Sized+Copy {
-  type RealStates: States<State<'a>=Self>+'a;
-  type Branch;
-  type BranchIter: Iterator<Item=Self::Branch>;
-  type SelfIter: Iterator<Item=Self>;
-  fn next_pieces(self, states: &'a Self::RealStates) -> Self::BranchIter;
-  fn next_states(self, states: &'a Self::RealStates, piece: Self::Branch) -> Self::SelfIter;
-}
-
 /* pub trait PrintableStateProxy: StateProxy {
   type MarkovState: std::fmt::Display+Ord+PartialEq+Clone+Send;
   fn markov_state(&self) -> Option<Self::MarkovState>;
@@ -44,10 +35,16 @@ pub trait HasLength {
 }
 
 pub trait States: HasLength+std::marker::Sync {
-  type State<'a>: StateProxy<'a, RealStates=Self>
+  type State;
+  type StateIter<'a>: Iterator<Item=Self::State>
   where Self: 'a;
-  fn get_state(&self, index: usize) -> Option<Self::State<'_>>;
-  fn get_index(&self, state: &Self::State<'_>) -> Option<usize>;
+  type Branch;
+  type BranchIter<'a>: Iterator<Item=Self::Branch>
+  where Self: 'a;
+  fn get_state(&self, index: usize) -> Option<Self::State>;
+  fn get_index(&self, state: &Self::State) -> Option<usize>;
+  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_>;
+  fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_>;
 }
 
 #[derive(Clone)]
@@ -155,12 +152,12 @@ impl<T: States> GetNext for T {
     res: U
   ) -> ArrayVec<Vec<usize>, 7> {
     let state = self.get_state(i).unwrap();
-    let mut nexts: ArrayVec<_, 7> = state
-      .next_pieces(self)
+    let mut nexts: ArrayVec<_, 7> = self
+      .next_pieces(state)
       .into_iter()
       .map(|piece| {
-        let mut next = state
-          .next_states(self, piece)
+        let mut next = self
+          .next_states(piece)
           .map(|state| {
             let i = self.get_index(&state).unwrap();
             match res.into() {

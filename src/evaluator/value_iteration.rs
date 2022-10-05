@@ -27,9 +27,9 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
       .map(|j| {
         let mut value = Mean::new();
         let state = self.states.get_state(j).unwrap();
-        for next in state.next_pieces(self.states) {
+        for next in self.states.next_pieces(state) {
           let mut this_value = Max::from_value(0.);
-          for next_state in state.next_states(self.states, next) {
+          for next_state in self.states.next_states(next) {
             this_value.add(self.values[self.states.get_index(&next_state).unwrap()] + 1.);
           }
           value.add(this_value.max());

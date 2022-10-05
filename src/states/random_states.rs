@@ -10,13 +10,46 @@ pub struct RandomStates {
 }
 
 impl States for RandomStates {
-  type State<'a> = RandomState;
-  fn get_state(&self, index: usize) -> Option<Self::State<'_>> {
+  type State = RandomState;
+  type Branch = (Self::State, Piece);
+  type BranchIter<'a> = std::vec::IntoIter<Self::Branch>;
+  type StateIter<'a> = RandomStateIter<'a>;
+  fn get_state(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState { field, seq: seq as u64 })
   }
-  fn get_index(&self, state: &Self::State<'_>) -> Option<usize> {
+  fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
+  }
+  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_> {
+    PIECES.iter().cloned().map(|i| (state, i)).collect_vec().into_iter()
+  }
+  fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_> {
+    let (state, piece) = piece;
+    let length = if self.hold { self.preview + 1 } else { self.preview };
+    let (seq, current) = state.seq.clone().push(piece, length);
+    let (begin, end) = self.continuations.cont_index[state.field][current as usize];
+    if self.hold {
+      let (seq2, current) = seq.clone().swap(current);
+      let (begin2, end2) = self.continuations.cont_index[state.field][current as usize];
+      RandomStateIter {
+        states: self,
+        seq,
+        seq2: Some(seq2),
+        range: (begin, end),
+        range2: Some((begin2, end2)),
+        pos: begin
+      }
+    } else {
+      RandomStateIter {
+        states: self,
+        seq,
+        seq2: None,
+        range: (begin, end),
+        range2: None,
+        pos: begin
+      }
+    }
   }
 }
 
@@ -48,42 +81,6 @@ impl HasLength for RandomStates {
 pub struct RandomState {
   field: usize,
   seq: u64
-}
-
-impl<'s> StateProxy<'s> for RandomState {
-  type RealStates = RandomStates;
-  type Branch = Piece;
-  type BranchIter = std::iter::Cloned<std::slice::Iter<'static, Self::Branch>>;
-  type SelfIter = RandomStateIter<'s>;
-  fn next_pieces(self, states: &'s Self::RealStates) -> Self::BranchIter {
-    PIECES.iter().cloned()
-  }
-  fn next_states(self, states: &'s Self::RealStates, piece: Self::Branch) -> Self::SelfIter {
-    let length = if states.hold { states.preview + 1 } else { states.preview };
-    let (seq, current) = self.seq.clone().push(piece, length);
-    let (begin, end) = states.continuations.cont_index[self.field][current as usize];
-    if states.hold {
-      let (seq2, current) = seq.clone().swap(current);
-      let (begin2, end2) = states.continuations.cont_index[self.field][current as usize];
-      RandomStateIter {
-        states: states,
-        seq,
-        seq2: Some(seq2),
-        range: (begin, end),
-        range2: Some((begin2, end2)),
-        pos: begin
-      }
-    } else {
-      RandomStateIter {
-        states: states,
-        seq,
-        seq2: None,
-        range: (begin, end),
-        range2: None,
-        pos: begin
-      }
-    }
-  }
 }
 
 pub struct RandomStateIter<'a> {

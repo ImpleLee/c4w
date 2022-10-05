@@ -1,4 +1,4 @@
-use crate::states::{StateProxy, States};
+use crate::states::States;
 use average::Mean;
 use itertools::Itertools;
 use ordered_float::NotNan;
