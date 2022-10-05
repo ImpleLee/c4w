@@ -14,26 +14,22 @@ impl<T: States> HasLength for MappedStates<T> {
 }
 
 impl<T: States> States for MappedStates<T> {
-  type State = MappedState;
-  type StateIter<'a> = Box<dyn Iterator<Item=Self::State>+'a> where T: 'a;
+  type State = usize;
+  type StateIter<'a> = std::vec::IntoIter<Self::State> where T: 'a;
   type Branch = Vec<usize>;
   type BranchIter<'a> = arrayvec::IntoIter<Self::Branch, 7> where T: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State> {
-    self.inverse.get(index).map(|&index| MappedState { index })
+    Some(index)
   }
   fn get_index(&self, state: &Self::State) -> Option<usize> {
-    self.mapping.get(state.index).cloned()
+    Some(*state)
   }
   fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_> {
-    self.original.get_next(state.index, &*self.mapping).into_iter()
+    self.original.get_next(self.inverse[state], &*self.mapping).into_iter()
   }
   fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_> {
-    Box::new(piece.into_iter().map(|i| MappedState { index: self.inverse[i] }))
+    piece.into_iter()
   }
-}
-
-pub struct MappedState {
-  index: usize
 }
 
 impl<T: States> MappedStates<MappedStates<T>> {
