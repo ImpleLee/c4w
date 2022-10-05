@@ -141,7 +141,7 @@ impl HasLength for RandomSequenceStates {
   }
 }
 
-type BagSequenceStates = Vec<ArrayVec<(usize, usize), 7>>;
+pub type BagSequenceStates = Vec<ArrayVec<(usize, usize), 7>>;
 impl SequenceStates for BagSequenceStates {
   type State = usize;
   type Proxy = (Self::State, usize);
