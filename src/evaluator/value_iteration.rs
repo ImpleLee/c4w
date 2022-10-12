@@ -25,16 +25,28 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
     let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len())
       .into_par_iter()
       .map(|j| {
-        let mut value = Mean::new();
+        let mut value = vec![];
+        let mut counter_added = 0.;
         let state = self.states.get_state(j).unwrap();
         for next in self.states.next_pieces(state) {
           let mut this_value = Max::from_value(0.);
+          let mut added = false;
           for next_state in self.states.next_states(next) {
-            this_value.add(self.values[self.states.get_index(&next_state).unwrap()] + 1.);
+            this_value.add(self.values[self.states.get_index(&next_state).unwrap()]);
+            added = true;
           }
-          value.add(this_value.max());
+          value.push(this_value.max());
+          if added {
+            counter_added += 1.;
+          }
         }
-        let new_value = value.mean();
+        value.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let new_value = value
+          .iter()
+          .cloned()
+          .reduce(|a, b| a + b)
+          .map(|x| (x + counter_added) / value.len() as f64)
+          .unwrap_or(0.);
         let old_value = self.values[j];
         let diff = (new_value - old_value).abs();
         (new_value, diff)
