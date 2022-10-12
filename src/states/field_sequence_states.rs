@@ -3,7 +3,8 @@ use crate::states::*;
 pub trait SequenceStates: HasLength+std::marker::Sync {
   type State: Copy;
   type Proxy: StateWithPiece<Self::State>;
-  type ProxyIter<'a>: Iterator<Item=Self::Proxy> where Self: 'a;
+  type ProxyIter<'a>: Iterator<Item=Self::Proxy>
+  where Self: 'a;
   fn new(preview: usize, base_len: usize) -> Self;
   fn get_state(&self, index: usize) -> Option<Self::State>;
   fn get_index(&self, state: &Self::State) -> Option<usize>;
@@ -125,10 +126,10 @@ impl SequenceStates for RandomSequenceStates {
   fn get_state(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
-  fn next_pieces(&self, mut state: Self::State) -> Self::ProxyIter<'_> {
+  fn next_pieces(&self, state: Self::State) -> Self::ProxyIter<'_> {
     (0..self.base_len)
       .map(|piece| {
-        state += piece * self.base_len.pow(self.preview as u32);
+        let state = state + piece * self.base_len.pow(self.preview as u32);
         state.div_rem(&self.base_len)
       })
       .collect_vec()
