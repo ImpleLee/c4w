@@ -18,8 +18,17 @@ fn main() {
     bincode::deserialize_from(std::io::stdin().lock()).unwrap();
   eprintln!("{}", continuations.len());
 
-  let num2state = FieldSequenceStates::<BagSequenceStates>::new(&continuations, 6, true);
+  let build_states = || FieldSequenceStates::<BagSequenceStates>::new(&continuations, 6, true);
+  let num2state = build_states();
   eprintln!("{}", (&num2state).len());
+
+  {
+    let num2state = build_states();
+    eprintln!(
+      "has infinite loop: {}",
+      LoopFinder::has_loop(ParallelMinimizer::minimize(num2state).concrete())
+    );
+  }
 
   let mut minimized = ParallelMinimizer::minimize(num2state).concrete();
 
