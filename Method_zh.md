@@ -133,10 +133,9 @@ $|P_0| = 2^{|S|^2}$，空间与时间复杂度都是指数级的，因此我们�
 注意到$F$的输出是自反且对称的，且保持传递性，所以$F$的输入是等价关系时，输出也是等价关系。
 又因为$P_0$是等价关系，所以$P_i$也是等价关系，所以我们可以用等价类来表示$P_i$，于是$P_i$可以在$O(|S|)$的空间复杂度下表示。
 
-具体到实际的算法，我们可以用一个哈希表来表示等价类，哈希表的键是状态，值是等价类的代表。
-起初，所有状态都属于同一等价类，所以哈希表的值都是同一个状态。
+具体到实际的算法，起初，所有状态都属于同一等价类。
 随后，我们对每个状态进行遍历，对于每个状态，我们遍历它的后继，对于每个后继，我们将其中的状态替换为它们的等价类的代表。
 这样，按照状态的新后继，我们可以将状态分到不同的等价类中。
 当不再有状态可以分到新的等价类中时，我们就得到了一个新的等价关系。
 
-这个最小化算法基于[分割调整](https://en.wikipedia.org/wiki/Partition_refinement)，与[Hopcroft有限自动机最小化算法](https://en.wikipedia.org/wiki/DFA_minimization#Hopcroft's_algorithm)很像。
+这个最小化算法的运行逻辑基于[分割调整](https://en.wikipedia.org/wiki/Partition_refinement)，与[Hopcroft有限自动机最小化算法](https://en.wikipedia.org/wiki/DFA_minimization#Hopcroft's_algorithm)很像。
