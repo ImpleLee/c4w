@@ -128,14 +128,19 @@ $\nu F$即最优策略下的等价关系$\sim$的必要条件。
 
 为了计算$\nu F$，我们可以从一个初始集合$P_0 = \mathcal P(S \times S)$开始，迭代地计算$P_{i+1} = F(P_i)$，直到$P_i = P_{i+1}$为止。
 
+$P_0 = \mathcal P(S \times S) \supseteq P_1$，$P_1 = F(P_0) \supseteq F(P_1) = P_2$，故$P_0 \supseteq P_1 \supseteq P_2 \supseteq \dots \supseteq P_i = P_{i+1} = \cdots$，所以该算法在有限步内收敛。
+
+$\nu F \subseteq P_0 = \mathcal P(S \times S)$，故$\nu F = F(\nu F) \subseteq F(P_0) = P_1$，故$\nu F \subseteq P_i$，故该算法收敛到$\nu F$。
+
 $|P_0| = 2^{|S|^2}$，空间与时间复杂度都是指数级的，因此我们需要一些优化。
 
 注意到$F$的输出是自反且对称的，且保持传递性，所以$F$的输入是等价关系时，输出也是等价关系。
 又因为$P_0$是等价关系，所以$P_i$也是等价关系，所以我们可以用等价类来表示$P_i$，于是$P_i$可以在$O(|S|)$的空间复杂度下表示。
+该算法在每一步至少增加一个等价类，所以最多需要$O(|S|)$步。
 
 具体到实际的算法，起初，所有状态都属于同一等价类。
 随后，我们对每个状态进行遍历，对于每个状态，我们遍历它的后继，对于每个后继，我们将其中的状态替换为它们的等价类的代表。
 这样，按照状态的新后继，我们可以将状态分到不同的等价类中。
 当不再有状态可以分到新的等价类中时，我们就得到了一个新的等价关系。
 
-这个最小化算法的运行逻辑基于[分割调整](https://en.wikipedia.org/wiki/Partition_refinement)，与[Hopcroft有限自动机最小化算法](https://en.wikipedia.org/wiki/DFA_minimization#Hopcroft's_algorithm)很像。
+这个最小化算法的运行逻辑基于[分割调整](https://en.wikipedia.org/wiki/Partition_refinement)，与[Hopcroft有限自动机最小化算法](https://en.wikipedia.org/wiki/DFA_minimization#Hopcroft's_algorithm)很像（几乎就是同一个算法）。
