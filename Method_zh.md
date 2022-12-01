@@ -56,6 +56,7 @@ $$\pi: F \times A \times Q \rightharpoonup F.$$
 如果 $\delta(f, a)$ 为空集，则 $\pi(f, a, q')$ 没有合法的选择。
 
 对给定策略 $\pi$ ，定义其在状态 $s$ 上的期望长度 $E_\pi$ 如下。
+
 $$
   E_\pi(s)
     = E_\pi(f, q)
@@ -66,13 +67,15 @@ $$
 $$
 
 我们想找到能最大化 $E_\pi$ 的最优策略 $\pi^\ast$ 。
+
 $$
-\pi^\ast = \arg \max_\pi E_\pi
+\pi^\ast = \arg \max_\pi E_\pi.
 $$
 
 这个问题叫[Markov决策过程](https://en.wikipedia.org/wiki/Markov_decision_process)，是已经被基本解决了的数学问题。
 
 对一个 $f$ , 如果两个 $a$ 给出相同的 $\delta(f, a)$ ，这两个 $a$ 其实没什么区别。因此之前的抽象可以继续按如下方式修改来去掉 $a$ 。
+
 $$
 \begin{aligned}
   \mathcal{P}(F \times Q) | F \times Q &\sim P',\\
@@ -87,6 +90,7 @@ $$
 
 ### Value Iteration
 我们用[value iteration](https://en.wikipedia.org/wiki/Value_iteration)算法来解决这个问题，这是一个用来求解Markov决策过程的经典算法。
+
 $$
 \begin{aligned}
   V_{i+1}(f, q)
