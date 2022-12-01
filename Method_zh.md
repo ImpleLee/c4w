@@ -60,7 +60,7 @@ $$\pi: F \times A \times Q \rightharpoonup F.$$
 $$
   E_\pi(s)
     = E_\pi(f, q)
-    = \mathbb{E}_{q', a|q \sim P} \left[
+    = \mathbb{E}_{q', a|q \sim P} \left[ \testinput
         \left[ \delta(f, a) \neq \varnothing \right] \left( E_\pi(\pi(f, a, q'), q') + 1 \right) \right].
 $$
 
@@ -93,7 +93,7 @@ $$
 \begin{aligned}
   V_{i+1}(f, q)
     &= \mathbb{E}_{q', a|q \sim P} \left[
-        \left[ \delta(f, a) \neq \varnothing \right] \left(\max_{f' \in \delta(f, a)} V_i(f', q') + 1\right)
+        \left[ \delta(f, a) \neq \varnothing \right]\testinput \left(\max_{f' \in \delta(f, a)} V_i(f', q') + 1\right)
       \right], \\
     &= \mathbb{E}_{q', a|q \sim P} \left[ \max \left\lbrace 0 \right\rbrace \cup \left\lbrace V_i(f', q') + 1 \vert f' \in \delta(f, a) \right\rbrace \right].\\
   V_0(\cdot) &= 0.
