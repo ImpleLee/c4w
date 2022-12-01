@@ -65,7 +65,7 @@ $$
 $$
 
 $$
-\mathbb{E}_{q} \left[ E_\pi(p) + 1\right ].
+E_q E_\pi.
 $$
 
 我们想找到能最大化 $E_\pi$ 的最优策略 $\pi^\ast$ 。
