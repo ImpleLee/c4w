@@ -98,13 +98,14 @@ $$
         \max_{f' \in \delta(f, a)} V_i(f', q') + 1, & \delta(f, a) \neq \varnothing,\\
         0, &\delta(f, a) = \varnothing,
       \end{cases}\right]\\
-    &= \mathbb{E}_{q', a|q \sim P} \max \{0\} \cup \{V_i(f', q') + 1 | f' \in \delta(f, a)\}.\\
+    &= \mathbb{E}_{q', a|q \sim P} \max \left\{0\right\} \cup \left\{V_i(f', q') + 1 \middle| f' \in \delta(f, a)\right\}.\\
   V_0(\cdot) &= 0.
 \end{aligned}
 $$
 
 用 $P'$ 来写的话就是这样。
-$$V_{i+1}(s) = \mathbb{E}_{S|s \sim P'} \max\{0\} \cup \{V_i(s') + 1 | s' \in S\}.$$
+
+$$V_{i+1}(s) = \mathbb{E}_{S|s \sim P'} \max \left\{0\right\} \cup \left\{V_i(s') + 1 \middle| s' \in S\right\}.$$
 
 ### 最小化
 
@@ -115,7 +116,7 @@ $$V_{i+1}(s) = \mathbb{E}_{S|s \sim P'} \max\{0\} \cup \{V_i(s') + 1 | s' \in S\
 但有一个hold和6个next时， $|F| = 40 \times 7 = 280$ ， $|Q| = 7^6 = 117649$ ，这样状态数就是 $280 \times 117649 = 32941720$ 。
 
 而且，其实在计算 $V_i$ 时确实有冗余的计算可以通过状态合并来消除。
-比如，如果把场地、hold和next中的每个块都左右翻转过来，（即`J, L, S, Z, I, O, T -> L, J, Z, S, I, O, T`），该状态的$V_i$值应当保持不变（忽略不对称的SRS I旋）。
+比如，如果把场地、hold和next中的每个块都左右翻转过来，（即`J, L, S, Z, I, O, T -> L, J, Z, S, I, O, T`），该状态的 $V_i$ 值应当保持不变（忽略不对称的SRS I旋）。
 
 定义最优策略下两个状态 $s$ 和 $s'$ 的期望值相同为这两个状态之间的一种关系 $s \sim s'$ 。显然这是一种等价关系。
 
