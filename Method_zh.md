@@ -60,8 +60,12 @@ $$\pi: F \times A \times Q \rightharpoonup F.$$
 $$
   E_\pi(s)
     = E_\pi(f, q)
-    = \mathbb{E}_{q', a|q \sim P} \left[ \left\{\right\}
+    = \mathbb{E}_{q', a|q \sim P} \left[
         \left[ \delta(f, a) \neq \varnothing \right] \left( E_\pi(\pi(f, a, q'), q') + 1 \right) \right].
+$$
+
+$$
+\mathbb{E}_{q} \left[ E_\pi(p) + 1\right ].
 $$
 
 我们想找到能最大化 $E_\pi$ 的最优策略 $\pi^\ast$ 。
@@ -92,7 +96,7 @@ $$
 $$
 \begin{aligned}
   V_{i+1}(f, q)
-    &= \mathbb{E}_{q', a|q \sim P} \left[ \left\{\right\}
+    &= \mathbb{E}_{q', a|q \sim P} \left[
         \left[ \delta(f, a) \neq \varnothing \right] \left(\max_{f' \in \delta(f, a)} V_i(f', q') + 1\right)
       \right], \\
     &= \mathbb{E}_{q', a|q \sim P} \left[ \max \left\lbrace 0 \right\rbrace \cup \left\lbrace V_i(f', q') + 1 \vert f' \in \delta(f, a) \right\rbrace \right].\\
