@@ -98,14 +98,16 @@ $$
         \max_{f' \in \delta(f, a)} V_i(f', q') + 1, & \delta(f, a) \neq \varnothing,\\
         0, &\delta(f, a) = \varnothing,
       \end{cases}\right]\\
-    &= \mathbb{E}_{q', a|q \sim P} \max \left\{0\right\} \cup \left\{V_i(f', q') + 1 \middle| f' \in \delta(f, a)\right\}.\\
+    &= \mathbb{E}_{q', a|q \sim P} \max \left\lbrace 0 \right\rbrace \cup \left \lbrace V_i(f', q') + 1 \middle| f' \in \delta(f, a)\right \rbrace.\\
   V_0(\cdot) &= 0.
 \end{aligned}
 $$
 
 用 $P'$ 来写的话就是这样。
 
-$$V_{i+1}(s) = \mathbb{E}_{S|s \sim P'} \max \left\{0\right\} \cup \left\{V_i(s') + 1 \middle| s' \in S\right\}.$$
+$$
+V_{i+1}(s) = \mathbb{E}_{S|s \sim P'} \max \left \lbrace  0 \right \rbrace \cup \left \lbrace V_i(s') + 1 \middle| s' \in S\right \rbrace.
+$$
 
 ### 最小化
 
