@@ -66,7 +66,7 @@ $$
 
 $$
 \begin{aligned}
-  \mathcal{P}(F \times Q) | F \times Q &\sim P',\\
+  S \subseteq F \times Q | s &\sim P',\\
   P'(\delta(f, a) \times \{q'\}| (f, q)) &= \sum_ {a': \delta(f, a') = \delta(f, a)} P(q', a'|q),\\
   P'(\varnothing | (f, q)) &= \sum_ {q', a: \delta(f, a) = \varnothing} P(q', a|q).
 \end{aligned}
@@ -108,14 +108,14 @@ $$
 而且，其实在计算 $V_ i$ 时确实有冗余的计算可以通过状态合并来消除。
 比如，如果把场地、hold和next中的每个块都左右翻转过来，（即`J, L, S, Z, I, O, T -> L, J, Z, S, I, O, T`），该状态的 $V_ i$ 值应当保持不变（忽略不对称的SRS I旋）。
 
-定义最优策略下两个状态 $s$ 和 $s'$ 的期望值相同为这两个状态之间的一种关系 $s \sim s'$ 。显然这是一种等价关系。
+定义最优策略下两个状态 $s$ 和 $s'$ 的期望值相同为这两个状态之间的一种关系 $s \sim s'$ 。
 
-观察到：如果两个后续数均为 $k$ 的状态 $s$ 和 $s'$ 的后继 $(S_ 1, p_ 1), (S_ 2, p_ 2), \dots, (S_ k, p_ k)$ 和 $(S_ 1', p_ 1'), (S_ 2', p_ 2'), \dots, (S_ k', p_ k')$ 之间存在一个一一对应（不妨 $(S_ i, p_ i)$ 对应 $(S_ i', p_ i')$ ），使得 $p_ i = p_ i'$ 且 $\forall t \in S_ i, \exists t' \in S_ i', t \sim t'$ 且 $\forall t' \in S_ i', \exists t \in S_ i, t' \sim t$ ，那么也有 $s \sim s'$ 。
+观察到：如果两个状态 $s_ 1$ 和 $s_ 2$ 之间存在 $P'(S_ 1 | s_ 1)$ 和 $P'(S_ 2 | s_ 2)$ 的联合分布 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 使得 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 非零时把 $\sim$ 约束到 $S_ 1 \times S_ 2$ 上既是左完全的也是右完全的（即 $\forall t_ 1 \in S_ 1, \exists t_ 2 \in S_ 2, t_ 1 \sim t_ 2$ 且 $\forall t_ 2 \in S_ 2, \exists t_ 1 \in S_ 1, t_ 1 \sim t_ 2$ ） ，那么也有 $s_ 1 \sim s_ 2$ 。
 
 该观察实际上给出了一个推理规则，即从一个 $\sim$ 成立的集合映射到另一个 $\sim$ 成立的集合的函数 $F: \mathcal P(S \times S) \to \mathcal P(S \times S)$ 。
 显然在 $P_ 1 \subseteq P_ 2$ 时，我们有 $F(P_ 1) \subseteq F(P_ 2)$ ，也就是说 $F$ 保持集合的包含关系。
 由[Knaster-Tarski定理](https://en.wikipedia.org/wiki/Knaster%E2%80%93Tarski_theorem)，存在一个最大不动点 $\nu F \subseteq \mathcal P(S \times S)$ 。
-$\nu F \subseteq \sim$ 。
+$\nu F \subseteq {\sim}$ 。
 
 为了计算 $\nu F$ ，我们可以从一个初始集合 $P_ 0 = \mathcal P(S \times S)$ 开始，迭代地计算 $P_ {i+1} = F(P_ i)$ ，直到 $P_ i = P_ {i+1}$ 为止。我们记这个 $F$ 的不动点为 $P_ k$ 。
 
@@ -125,8 +125,8 @@ $\nu F \subseteq \sim$ 。
 又因为 $P_ 0$ 是等价关系，所以 $P_ i$ 均为等价关系。
 所以 $\nu F$ 是一个等价关系，于是我们可以用它来合并状态。
 
-$P_ 0 = \mathcal P(S \times S) \supseteq P_ 1$ ， $P_ 1 = F(P_ 0) \supseteq F(P_ 1) = P_ 2$ ，故 $P_ 0 \supseteq P_ 1 \supseteq P_ 2 \supseteq \dots \supseteq P_ k = P_ {k+1} = \cdots$ ，所以该算法在有限步内停止。
-如果不停止，该算法在每一步至少增加一个等价类，所以最多需要 $O(|S|)$ 步。
+$P_ 0 = \mathcal P(S \times S) \supseteq P_ 1$ ， $P_ 1 = F(P_ 0) \supseteq F(P_ 1) = P_ 2$ ，故 $P_ 0 \supseteq P_ 1 \supseteq P_ 2 \supseteq \cdots$ ，但 $P_ 0$ 是有限的，所以该算法在有限步内停止。
+在不动点以外，该算法在每一步至少增加一个等价类，所以最多需要 $O(|S|)$ 步停止。
 
 因为 $P_ i$ 是等价关系，所以我们可以用等价类来表示 $P_ i$ ，于是 $P_ i$ 可以在 $O(|S|)$ 的空间复杂度下表示。
 
@@ -136,3 +136,29 @@ $P_ 0 = \mathcal P(S \times S) \supseteq P_ 1$ ， $P_ 1 = F(P_ 0) \supseteq F(P
 当不再有状态可以分到新的等价类中时，我们就得到了一个新的等价关系。
 
 这个最小化算法的运行逻辑基于[分割调整](https://en.wikipedia.org/wiki/Partition_refinement)，与[Hopcroft有限自动机最小化算法](https://en.wikipedia.org/wiki/DFA_minimization#Hopcroft's_algorithm)很像（几乎就是同一个算法）。
+
+### 剪枝
+
+基于value iteration的大小比较有数值精度的问题，我们期待找到更多不基于具体数值的比较方法。
+
+定义最优策略下状态 $s$ 的期望值小于等于状态 $s'$ 的期望值为这两个状态的一种关系，记为 $s \preceq s'$。
+
+观察到：如果两个状态 $s_ 1$ 和 $s_ 2$ 之间存在 $P'(S_ 1 | s_ 1)$ 和 $P'(S_ 2 | s_ 2)$ 的联合分布 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 使得 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 非零时把 $\preceq$ 约束到 $S_ 1 \times S_ 2$ 上是左完全的（即 $\forall t_ 1 \in S_ 1, \exists t_ 2 \in S_ 2, t_ 1 \preceq t_ 2$ ） ，那么也有 $s_ 1 \preceq s_ 2$ 。
+
+类似于上一节，这也给出了从一个 $\preceq$ 成立的集合映射到另一个 $\preceq$ 成立的集合的函数 $F: \mathcal P(S \times S) \to \mathcal P(S \times S)$ ，而且它也保持集合的包含关系。
+由[Knaster-Tarski定理](https://en.wikipedia.org/wiki/Knaster%E2%80%93Tarski_theorem)，存在一个最大不动点 $\nu F \subseteq \mathcal P(S \times S)$ 。
+$\nu F \subseteq {\preceq}$。
+
+我们同样可以从 $P_ 0 = \mathcal P(S \times S)$ 开始迭代计算 $P_ {i+1} = F(P_ i)$ ，直到 $P_ i = P_ {i+1}$ ，这样我们就得到了 $P_ k = \nu F$ 。
+其正确性证明同上。
+
+注意到 $F$ 的输出是自反且反对称的，且 $F$ 保持传递性，所以 $F$ 的输入是偏序关系时，$F$ 的输出也是偏序关系。
+又因为 $P_ 0$ 是偏序关系，所以 $P_ i$ 均为偏序关系，所以 $\nu F$ 也是偏序关系。
+
+得到这样的偏序关系后，我们可以用它来把每个后继集合替换为 $\nu F$ 下的极大元的集合，达到剪枝的目的。
+
+算法会停止的证明同上。
+但与上一节不同，这里我们没有停止步数的非平凡上界。（todo：给出一个非平凡上界。）
+
+实际的算法类似于上一节，但我们不仅要验证由 $P_ i$ 导出的等价类是否会分裂，还要验证 $P_ i$ 的[transitive reduction](https://en.wikipedia.org/wiki/Transitive_reduction)的每条边是否会被移除。
+（todo：实现该算法。）
