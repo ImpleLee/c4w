@@ -1,15 +1,3 @@
----
-colorlinks: true
-CJKmainfont: Noto Serif CJK SC
-mathfont: Latin Modern Math
-header-includes: |
-  ```{=latex}
-  \setmathfont[range=\varnothing]{Asana Math}
-  \DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
-  \let\mathbb\relax
-  \DeclareMathAlphabet{\mathbb}{U}{msb}{m}{n}
-  ```
----
 # 期望连击长度最长的4w策略
 
 ## 问题介绍
