@@ -141,21 +141,21 @@ $P_ 0 = \mathcal P(S \times S) \supseteq P_ 1$ ， $P_ 1 = F(P_ 0) \supseteq F(P
 
 基于value iteration的大小比较有数值精度的问题，我们期待找到更多不基于具体数值的比较方法。
 
-定义最优策略下状态 $s$ 的期望值小于等于状态 $s'$ 的期望值为这两个状态的一种关系，记为 $s \preceq s'$。
+定义最优策略下状态 $s$ 的期望值小于等于状态 $s'$ 的期望值为这两个状态的一种关系，记为 $s \lesssim s'$ 。
 
-观察到：如果两个状态 $s_ 1$ 和 $s_ 2$ 之间存在 $P'(S_ 1 | s_ 1)$ 和 $P'(S_ 2 | s_ 2)$ 的联合分布 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 使得 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 非零时把 $\preceq$ 约束到 $S_ 1 \times S_ 2$ 上是左完全的（即 $\forall t_ 1 \in S_ 1, \exists t_ 2 \in S_ 2, t_ 1 \preceq t_ 2$ ） ，那么也有 $s_ 1 \preceq s_ 2$ 。
+观察到：如果两个状态 $s_ 1$ 和 $s_ 2$ 之间存在 $P'(S_ 1 | s_ 1)$ 和 $P'(S_ 2 | s_ 2)$ 的联合分布 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 使得 $P(S_ 1, S_ 2 | s_ 1, s_ 2)$ 非零时把 $\lesssim$ 约束到 $S_ 1 \times S_ 2$ 上是左完全的（即 $\forall t_ 1 \in S_ 1, \exists t_ 2 \in S_ 2, t_ 1 \lesssim t_ 2$ ） ，那么也有 $s_ 1 \lesssim s_ 2$ 。
 
-类似于上一节，这也给出了从一个 $\preceq$ 成立的集合映射到另一个 $\preceq$ 成立的集合的函数 $F: \mathcal P(S \times S) \to \mathcal P(S \times S)$ ，而且它也保持集合的包含关系。
+类似于上一节，这也给出了从一个 $\lesssim$ 成立的集合映射到另一个 $\lesssim$ 成立的集合的函数 $F: \mathcal P(S \times S) \to \mathcal P(S \times S)$ ，而且它也保持集合的包含关系。
 由[Knaster-Tarski定理](https://en.wikipedia.org/wiki/Knaster%E2%80%93Tarski_theorem)，存在一个最大不动点 $\nu F \subseteq \mathcal P(S \times S)$ 。
-$\nu F \subseteq {\preceq}$。
+$\nu F \subseteq {\lesssim}$ 。
 
 我们同样可以从 $P_ 0 = \mathcal P(S \times S)$ 开始迭代计算 $P_ {i+1} = F(P_ i)$ ，直到 $P_ i = P_ {i+1}$ ，这样我们就得到了 $P_ k = \nu F$ 。
 其正确性证明同上。
 
-注意到 $F$ 的输出是自反且反对称的，且 $F$ 保持传递性，所以 $F$ 的输入是偏序关系时，$F$ 的输出也是偏序关系。
-又因为 $P_ 0$ 是偏序关系，所以 $P_ i$ 均为偏序关系，所以 $\nu F$ 也是偏序关系。
+注意到 $F$ 的输出是自反的，且 $F$ 保持传递性（自反且传递的关系称为预序关系）。
+又因为 $P_ 0$ 是自反且传递的，所以 $P_ i$ 均为自反传递的，所以 $\nu F$ 也是自反传递的。
 
-得到这样的偏序关系后，我们可以用它来把每个后继集合替换为 $\nu F$ 下的极大元的集合，达到剪枝的目的。
+得到这样的预序关系后，我们可以用它来把每个后继集合替换为 $\nu F$ 下的极大元的集合，达到剪枝的目的。
 
 算法会停止的证明同上。
 但与上一节不同，这里我们没有停止步数的非平凡上界。（todo：给出一个非平凡上界。）
