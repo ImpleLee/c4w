@@ -16,8 +16,9 @@ rayon = "1.5.1"
 num-integer = "0.1.44"
 arrayvec = "0.7.2"
 dashmap = { version = "5.2.0", features = ["rayon"] }
-gcd = "2.1.0"
 hopcroft-karp = "0.2.1"
+rs-graph = "0.20.1"
+sucds = "0.7.0"
 
 [profile.release]
 lto = true

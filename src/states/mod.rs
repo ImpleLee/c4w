@@ -7,7 +7,6 @@ pub use field_sequence_states::*;
 
 use crate::basics::{Field, Piece, PIECES};
 use arrayvec::ArrayVec;
-use gcd::Gcd;
 use itertools::Itertools;
 use num_integer::Integer;
 use std::collections::{HashMap, VecDeque};
@@ -131,55 +130,66 @@ impl<'a> Sequence for VecDeque<Piece> {
 }
 
 pub trait GetNext {
-  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+  fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
-    res: U
-  ) -> ArrayVec<Vec<usize>, 7>;
-  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize>;
+    maximal_func: F,
+  ) -> ArrayVec<I, 7>;
+  fn get_next<'a, U: Into<Option<&'a [usize]>> + Copy>(
+    &self,
+    i: usize,
+    res: U,
+  ) -> ArrayVec<Vec<usize>, 7> {
+    if let Some(res) = res.into() {
+      self.true_get_next(i, |v| {
+        let mut v2 = v.into_iter().map(|i| res[i]).collect::<Vec<_>>();
+        v2.sort_unstable();
+        v2.dedup();
+        v2
+      })
+    } else {
+      self.true_get_next(i, |mut v| {
+        v.sort_unstable();
+        v.dedup();
+        v
+      })
+    }
+  }
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>> + Copy>(&self, i: usize, res: U) -> Vec<usize> {
+    next2id(self.get_next(i, res))
+  }
+}
+
+fn next2id(nexts: ArrayVec<Vec<usize>, 7>) -> Vec<usize> {
+  std::iter::once(nexts.len())
+    .chain(nexts.iter().map(|v| v.len()))
+    .chain(nexts.iter().flatten().cloned())
+    .collect()
 }
 
 impl<T: States> GetNext for T {
-  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
+  fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
-    res: U
-  ) -> ArrayVec<Vec<usize>, 7> {
+    maximal_func: F,
+  ) -> ArrayVec<I, 7> {
     let state = self.decode(i).unwrap();
     let mut nexts: ArrayVec<_, 7> = self
       .next_pieces(state)
       .into_iter()
       .map(|piece| {
-        let mut next = self
-          .next_states(piece)
-          .map(|state| {
-            let i = self.encode(&state).unwrap();
-            match res.into() {
-              Some(res) => res[i],
-              None => i
-            }
-          })
-          .collect_vec();
-        next.sort_unstable();
-        next.dedup();
-        next.shrink_to_fit();
-        next
+        let next =
+          self.next_states(piece).map(|state| self.encode(&state).unwrap()).collect_vec();
+        maximal_func(next)
       })
       .collect();
     nexts.sort_unstable();
-    let gcd = nexts.iter().count_same().fold(0, |a, (_v, b)| a.gcd(b));
+    let gcd = nexts.iter().count_same().fold(0, |a, (_, b)| a.gcd(&b));
     if gcd > 1 {
       nexts.into_iter().step_by(gcd).collect()
     } else {
       nexts
     }
-  }
-  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
-    let nexts = self.get_next(i, res);
-    std::iter::once(nexts.len())
-      .chain(nexts.iter().map(|v| v.len()))
-      .chain(nexts.iter().flatten().cloned())
-      .collect()
   }
 }
 

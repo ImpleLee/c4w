@@ -1,8 +1,8 @@
 use crate::pruner::*;
 use arrayvec::ArrayVec;
-use gcd::Gcd;
 use hopcroft_karp::matching;
 use itertools::{iproduct, Itertools};
+use num_integer::Integer;
 use rayon::prelude::*;
 
 pub struct PlainPruner;
@@ -104,7 +104,7 @@ fn find_smaller<T: States>(states: &T, u1: usize, u2: usize) -> Option<(usize, u
     return Some((u1, u2));
   }
 
-  let get_multiplier = |a: usize, b: usize| (b / a.gcd(b), a / a.gcd(b));
+  let get_multiplier = |a: usize, b: usize| (b / a.gcd(&b), a / a.gcd(&b));
   let (multiplier1, multiplier2) = get_multiplier(nexts1.len(), nexts2.len());
   let bases = iproduct!(
     (0..multiplier1).map(|i| i * nexts1.len()),
