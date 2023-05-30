@@ -35,7 +35,9 @@ impl LoopFinder {
       (reversed_edge_index, reversed_edges.into_iter().map(|(_, to)| to).collect::<Vec<_>>())
     };
     let mut visited = vec![false; states.len()];
-    let mut stack = states.nexts.cont_index
+    let mut stack = states
+      .nexts
+      .cont_index
       .par_iter()
       .enumerate()
       .filter_map(|(i, index)| index.iter().any(|&(begin, end)| begin == end).then_some(i))

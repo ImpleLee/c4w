@@ -133,12 +133,12 @@ pub trait GetNext {
   fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
-    maximal_func: F,
+    maximal_func: F
   ) -> ArrayVec<I, 7>;
-  fn get_next<'a, U: Into<Option<&'a [usize]>> + Copy>(
+  fn get_next<'a, U: Into<Option<&'a [usize]>>+Copy>(
     &self,
     i: usize,
-    res: U,
+    res: U
   ) -> ArrayVec<Vec<usize>, 7> {
     if let Some(res) = res.into() {
       self.true_get_next(i, |v| {
@@ -155,7 +155,7 @@ pub trait GetNext {
       })
     }
   }
-  fn get_next_id<'a, U: Into<Option<&'a [usize]>> + Copy>(&self, i: usize, res: U) -> Vec<usize> {
+  fn get_next_id<'a, U: Into<Option<&'a [usize]>>+Copy>(&self, i: usize, res: U) -> Vec<usize> {
     next2id(self.get_next(i, res))
   }
 }
@@ -171,7 +171,7 @@ impl<T: States> GetNext for T {
   fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
-    maximal_func: F,
+    maximal_func: F
   ) -> ArrayVec<I, 7> {
     let state = self.decode(i).unwrap();
     let mut nexts: ArrayVec<_, 7> = self
