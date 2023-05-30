@@ -34,8 +34,12 @@ impl Minimizer for ParallelMinimizer {
         })
         .into_values()
         .collect_vec();
+      {
+        let seed_order = inverse.iter().enumerate().map(|(i, &seed)| (seed, i)).collect::<HashMap<_, _>>();
+        inverse.extend(local_seeds.iter().map(|seeds| seeds[0]));
+        inverse.par_sort_by_key(|&seed| seed_order[&mapping[seed]]);
+      }
       mapping = new_mapping;
-      inverse.extend(local_seeds.iter().map(|seeds| seeds[0]));
       eprintln!("minimized states: {}", inverse.len());
       if local_seeds.len() == 0 {
         break;
