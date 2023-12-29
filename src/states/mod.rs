@@ -1,5 +1,3 @@
-mod random_states;
-pub use random_states::*;
 mod mapped_states;
 pub use mapped_states::*;
 mod concrete_mapped_states;

@@ -29,21 +29,21 @@ pub struct FieldSequenceStates<S: SequenceStates> {
   sequence: S
 }
 impl<S: SequenceStates> States for FieldSequenceStates<S> {
-  type State = FieldSequenceState<S>;
+  type State = (usize, usize, S::State);
   type Branch = (usize, usize, S::Proxy);
-  fn encode(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, &(field, hold, sequence): &Self::State) -> Option<usize> {
     self
       .sequence
-      .encode(&state.sequence)
-      .map(|seq| self.base_len() * seq + self.fields.len() * state.hold + state.field)
+      .encode(&sequence)
+      .map(|seq| self.base_len() * seq + self.fields.len() * hold + field)
   }
   fn decode(&self, index: usize) -> Option<Self::State> {
     let (sequence, field_hold) = index.div_rem(&self.base_len());
     let (hold, field) = field_hold.div_rem(&self.fields.len());
-    self.sequence.decode(sequence).map(|sequence| FieldSequenceState { field, hold, sequence })
+    self.sequence.decode(sequence).map(|sequence| (field, hold, sequence))
   }
-  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
-    self.sequence.next_pieces(state.sequence).map(move |v| (state.field, state.hold, v))
+  fn next_pieces(&self, (field, hold, sequence): Self::State) -> impl Iterator<Item=Self::Branch> {
+    self.sequence.next_pieces(sequence).map(move |p| (field, hold, p))
   }
   fn next_states(&self, (field, hold, piece): Self::Branch) -> impl Iterator<Item=Self::State> {
     let indices = &self.continuations.cont_index[field];
@@ -52,13 +52,12 @@ impl<S: SequenceStates> States for FieldSequenceStates<S> {
     let (left, right) = indices[self.base[current] as usize];
     self.continuations.continuations[left..right]
       .iter()
-      .map(move |&field| FieldSequenceState { field, hold, sequence })
+      .map(move |&field| (field, hold, sequence))
       .chain({
-        let (left, right) = indices[self.base[hold] as usize];
+        let (left, right) = if self.hold { indices[self.base[hold] as usize] } else { (0, 0) };
         self.continuations.continuations[left..right]
           .iter()
-          .filter(|_| self.hold)
-          .map(move |&field| FieldSequenceState { field, hold: current, sequence })
+          .map(move |&field| (field, current, sequence))
       })
   }
 }
@@ -93,12 +92,6 @@ impl<S: SequenceStates> FieldSequenceStates<S> {
       self.fields.len()
     }
   }
-}
-
-pub struct FieldSequenceState<S: SequenceStates> {
-  field: usize,
-  hold: usize,
-  sequence: S::State
 }
 
 pub struct RandomSequenceStates {
