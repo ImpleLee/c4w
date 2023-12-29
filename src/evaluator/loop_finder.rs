@@ -1,7 +1,7 @@
 use super::*;
 use rayon::prelude::*;
 
-pub struct LoopFinder {}
+pub struct LoopFinder;
 
 impl LoopFinder {
   pub fn has_loop<T: States>(mut states: ConcreteMappedStates<T>) -> bool {

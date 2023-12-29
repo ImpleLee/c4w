@@ -5,7 +5,7 @@ use hopcroft_karp::matching;
 use itertools::{iproduct, Itertools};
 use rayon::prelude::*;
 
-pub struct PlainPruner {}
+pub struct PlainPruner;
 
 impl<T: States> Pruner<T> for PlainPruner {
   fn prune(states: MappedStates<T>) -> ConcreteMappedStates<T> {

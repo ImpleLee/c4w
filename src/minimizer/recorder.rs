@@ -1,7 +1,7 @@
 use crate::minimizer::*;
 use std::hash::Hash;
 
-pub struct RecorderMinimizer {}
+pub struct RecorderMinimizer;
 
 impl Minimizer for RecorderMinimizer {
   fn minimize<T: States>(states: T) -> MappedStates<T> {

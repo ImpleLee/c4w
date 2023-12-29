@@ -4,7 +4,7 @@ use std::collections::HashSet;
 // uses tons of memory
 // not recommended unless you have a lot of memory
 // possibly wrong at `nexts`, but partition is right
-pub struct RawMinimizer {}
+pub struct RawMinimizer;
 
 impl Minimizer for RawMinimizer {
   fn minimize<T: States>(states: T) -> MappedStates<T> {

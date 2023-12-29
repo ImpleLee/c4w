@@ -1,6 +1,6 @@
 use crate::minimizer::*;
 
-pub struct ConservMinimizer {}
+pub struct ConservMinimizer;
 
 impl Minimizer for ConservMinimizer {
   fn minimize<T: States>(states: T) -> MappedStates<T> {

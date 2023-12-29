@@ -1,6 +1,6 @@
 use crate::minimizer::*;
 
-pub struct ParallelMinimizer {}
+pub struct ParallelMinimizer;
 
 impl Minimizer for ParallelMinimizer {
   fn minimize<T: States>(states: T) -> MappedStates<T> {

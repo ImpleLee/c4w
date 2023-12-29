@@ -1,7 +1,7 @@
 use crate::minimizer::*;
 use ::dashmap::DashMap;
 
-pub struct DashMapMinimizer {}
+pub struct DashMapMinimizer;
 
 impl Minimizer for DashMapMinimizer {
   fn minimize<T: States>(states: T) -> MappedStates<T> {
