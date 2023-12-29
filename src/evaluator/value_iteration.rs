@@ -27,12 +27,12 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
       .map(|j| {
         let mut value = vec![];
         let mut counter_added = 0.;
-        let state = self.states.get_state(j).unwrap();
+        let state = self.states.decode(j).unwrap();
         for next in self.states.next_pieces(state) {
           let mut this_value = Max::from_value(0.);
           let mut added = false;
           for next_state in self.states.next_states(next) {
-            this_value.add(self.values[self.states.get_index(&next_state).unwrap()]);
+            this_value.add(self.values[self.states.encode(&next_state).unwrap()]);
             added = true;
           }
           value.push(this_value.max());

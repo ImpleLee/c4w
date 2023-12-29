@@ -4,8 +4,8 @@ pub trait SequenceStates: HasLength+std::marker::Sync {
   type State: Copy;
   type Proxy: StateWithPiece<Self::State>;
   fn new(preview: usize, base_len: usize) -> Self;
-  fn get_state(&self, index: usize) -> Option<Self::State>;
-  fn get_index(&self, state: &Self::State) -> Option<usize>;
+  fn decode(&self, index: usize) -> Option<Self::State>;
+  fn encode(&self, state: &Self::State) -> Option<usize>;
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy>;
 }
 pub trait StateWithPiece<T> {
@@ -31,16 +31,16 @@ pub struct FieldSequenceStates<S: SequenceStates> {
 impl<S: SequenceStates> States for FieldSequenceStates<S> {
   type State = FieldSequenceState<S>;
   type Branch = (usize, usize, S::Proxy);
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, state: &Self::State) -> Option<usize> {
     self
       .sequence
-      .get_index(&state.sequence)
+      .encode(&state.sequence)
       .map(|seq| self.base_len() * seq + self.fields.len() * state.hold + state.field)
   }
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn decode(&self, index: usize) -> Option<Self::State> {
     let (sequence, field_hold) = index.div_rem(&self.base_len());
     let (hold, field) = field_hold.div_rem(&self.fields.len());
-    self.sequence.get_state(sequence).map(|sequence| FieldSequenceState { field, hold, sequence })
+    self.sequence.decode(sequence).map(|sequence| FieldSequenceState { field, hold, sequence })
   }
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
     self.sequence.next_pieces(state.sequence).map(move |v| (state.field, state.hold, v))
@@ -111,10 +111,10 @@ impl SequenceStates for RandomSequenceStates {
   fn new(preview: usize, base_len: usize) -> Self {
     Self { preview, base_len }
   }
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, state: &Self::State) -> Option<usize> {
     Some(*state)
   }
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn decode(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy> {
@@ -185,10 +185,10 @@ impl SequenceStates for BagSequenceStates {
     });
     bfs.collect()
   }
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, state: &Self::State) -> Option<usize> {
     Some(*state)
   }
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn decode(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy> {

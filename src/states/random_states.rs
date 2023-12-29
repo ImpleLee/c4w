@@ -12,11 +12,11 @@ pub struct RandomStates {
 impl States for RandomStates {
   type State = RandomState;
   type Branch = (Self::State, Piece);
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn decode(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState { field, seq: seq as u64 })
   }
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
   }
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {

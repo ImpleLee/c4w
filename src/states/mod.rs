@@ -37,8 +37,8 @@ pub trait HasLength {
 pub trait States: HasLength+std::marker::Sync {
   type State;
   type Branch;
-  fn get_state(&self, index: usize) -> Option<Self::State>;
-  fn get_index(&self, state: &Self::State) -> Option<usize>;
+  fn decode(&self, index: usize) -> Option<Self::State>;
+  fn encode(&self, state: &Self::State) -> Option<usize>;
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch>;
   fn next_states(&self, piece: Self::Branch) -> impl Iterator<Item=Self::State>;
 }
@@ -147,7 +147,7 @@ impl<T: States> GetNext for T {
     i: usize,
     res: U
   ) -> ArrayVec<Vec<usize>, 7> {
-    let state = self.get_state(i).unwrap();
+    let state = self.decode(i).unwrap();
     let mut nexts: ArrayVec<_, 7> = self
       .next_pieces(state)
       .into_iter()
@@ -155,7 +155,7 @@ impl<T: States> GetNext for T {
         let mut next = self
           .next_states(piece)
           .map(|state| {
-            let i = self.get_index(&state).unwrap();
+            let i = self.encode(&state).unwrap();
             match res.into() {
               Some(res) => res[i],
               None => i

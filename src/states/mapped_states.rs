@@ -16,10 +16,10 @@ impl<T: States> HasLength for MappedStates<T> {
 impl<T: States> States for MappedStates<T> {
   type State = usize;
   type Branch = Vec<usize>;
-  fn get_state(&self, index: usize) -> Option<Self::State> {
+  fn decode(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
-  fn get_index(&self, state: &Self::State) -> Option<usize> {
+  fn encode(&self, state: &Self::State) -> Option<usize> {
     Some(*state)
   }
   fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
