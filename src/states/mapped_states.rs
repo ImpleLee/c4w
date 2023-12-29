@@ -15,19 +15,17 @@ impl<T: States> HasLength for MappedStates<T> {
 
 impl<T: States> States for MappedStates<T> {
   type State = usize;
-  type StateIter<'a> = std::vec::IntoIter<Self::State> where T: 'a;
   type Branch = Vec<usize>;
-  type BranchIter<'a> = arrayvec::IntoIter<Self::Branch, 7> where T: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
   fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(*state)
   }
-  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_> {
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
     self.original.get_next(self.inverse[state], &*self.mapping).into_iter()
   }
-  fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_> {
+  fn next_states(&self, piece: Self::Branch) -> impl Iterator<Item=Self::State> {
     piece.into_iter()
   }
 }

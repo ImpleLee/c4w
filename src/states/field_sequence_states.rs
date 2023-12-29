@@ -3,12 +3,10 @@ use crate::states::*;
 pub trait SequenceStates: HasLength+std::marker::Sync {
   type State: Copy;
   type Proxy: StateWithPiece<Self::State>;
-  type ProxyIter<'a>: Iterator<Item=Self::Proxy>
-  where Self: 'a;
   fn new(preview: usize, base_len: usize) -> Self;
   fn get_state(&self, index: usize) -> Option<Self::State>;
   fn get_index(&self, state: &Self::State) -> Option<usize>;
-  fn next_pieces(&self, state: Self::State) -> Self::ProxyIter<'_>;
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy>;
 }
 pub trait StateWithPiece<T> {
   fn gen_state(&self) -> T;
@@ -32,9 +30,7 @@ pub struct FieldSequenceStates<S: SequenceStates> {
 }
 impl<S: SequenceStates> States for FieldSequenceStates<S> {
   type State = FieldSequenceState<S>;
-  type StateIter<'a> = std::vec::IntoIter<Self::State> where S: 'a;
   type Branch = (usize, usize, S::Proxy);
-  type BranchIter<'a> = Box<dyn Iterator<Item=Self::Branch>+'a> where S: 'a;
   fn get_index(&self, state: &Self::State) -> Option<usize> {
     self
       .sequence
@@ -46,12 +42,10 @@ impl<S: SequenceStates> States for FieldSequenceStates<S> {
     let (hold, field) = field_hold.div_rem(&self.fields.len());
     self.sequence.get_state(sequence).map(|sequence| FieldSequenceState { field, hold, sequence })
   }
-  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_> {
-    Box::new(self.sequence.next_pieces(state.sequence).map(move |v| (state.field, state.hold, v)))
-    //.collect_vec()
-    //.into_iter()
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
+    self.sequence.next_pieces(state.sequence).map(move |v| (state.field, state.hold, v))
   }
-  fn next_states(&self, (field, hold, piece): Self::Branch) -> Self::StateIter<'_> {
+  fn next_states(&self, (field, hold, piece): Self::Branch) -> impl Iterator<Item=Self::State> {
     let indices = &self.continuations.cont_index[field];
     let sequence = piece.gen_state();
     let current = piece.gen_piece();
@@ -66,8 +60,6 @@ impl<S: SequenceStates> States for FieldSequenceStates<S> {
           .filter(|_| self.hold)
           .map(move |&field| FieldSequenceState { field, hold: current, sequence })
       })
-      .collect_vec()
-      .into_iter()
   }
 }
 impl<S: SequenceStates> HasLength for FieldSequenceStates<S> {
@@ -116,7 +108,6 @@ pub struct RandomSequenceStates {
 impl SequenceStates for RandomSequenceStates {
   type State = usize;
   type Proxy = (Self::State, usize);
-  type ProxyIter<'a> = std::vec::IntoIter<Self::Proxy>;
   fn new(preview: usize, base_len: usize) -> Self {
     Self { preview, base_len }
   }
@@ -126,14 +117,12 @@ impl SequenceStates for RandomSequenceStates {
   fn get_state(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
-  fn next_pieces(&self, state: Self::State) -> Self::ProxyIter<'_> {
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy> {
     (0..self.base_len)
-      .map(|piece| {
+      .map(move |piece| {
         let state = state + piece * self.base_len.pow(self.preview as u32);
         state.div_rem(&self.base_len)
       })
-      .collect_vec()
-      .into_iter()
   }
 }
 impl HasLength for RandomSequenceStates {
@@ -146,7 +135,6 @@ pub type BagSequenceStates = Vec<ArrayVec<(usize, usize), 7>>;
 impl SequenceStates for BagSequenceStates {
   type State = usize;
   type Proxy = (Self::State, usize);
-  type ProxyIter<'a> = std::iter::Cloned<std::slice::Iter<'a, Self::Proxy>>;
   fn new(preview: usize, base_len: usize) -> Self {
     type State = (VecDeque<usize>, Vec<bool>);
     struct BFS {
@@ -203,7 +191,7 @@ impl SequenceStates for BagSequenceStates {
   fn get_state(&self, index: usize) -> Option<Self::State> {
     Some(index)
   }
-  fn next_pieces(&self, state: Self::State) -> Self::ProxyIter<'_> {
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Proxy> {
     self[state].iter().cloned()
   }
 }

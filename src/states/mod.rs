@@ -36,15 +36,11 @@ pub trait HasLength {
 
 pub trait States: HasLength+std::marker::Sync {
   type State;
-  type StateIter<'a>: Iterator<Item=Self::State>
-  where Self: 'a;
   type Branch;
-  type BranchIter<'a>: Iterator<Item=Self::Branch>
-  where Self: 'a;
   fn get_state(&self, index: usize) -> Option<Self::State>;
   fn get_index(&self, state: &Self::State) -> Option<usize>;
-  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_>;
-  fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_>;
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch>;
+  fn next_states(&self, piece: Self::Branch) -> impl Iterator<Item=Self::State>;
 }
 
 #[derive(Clone)]

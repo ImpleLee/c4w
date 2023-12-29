@@ -12,8 +12,6 @@ pub struct RandomStates {
 impl States for RandomStates {
   type State = RandomState;
   type Branch = (Self::State, Piece);
-  type BranchIter<'a> = std::vec::IntoIter<Self::Branch>;
-  type StateIter<'a> = RandomStateIter<'a>;
   fn get_state(&self, index: usize) -> Option<Self::State> {
     let (seq, field) = index.div_rem(&self.fields.len());
     Some(RandomState { field, seq: seq as u64 })
@@ -21,10 +19,10 @@ impl States for RandomStates {
   fn get_index(&self, state: &Self::State) -> Option<usize> {
     Some(self.fields.len() * state.seq as usize + state.field)
   }
-  fn next_pieces(&self, state: Self::State) -> Self::BranchIter<'_> {
-    PIECES.iter().cloned().map(|i| (state, i)).collect_vec().into_iter()
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
+    PIECES.iter().cloned().map(move |i| (state, i))
   }
-  fn next_states(&self, piece: Self::Branch) -> Self::StateIter<'_> {
+  fn next_states(&self, piece: Self::Branch) -> impl Iterator<Item=Self::State> {
     let (state, piece) = piece;
     let length = if self.hold { self.preview + 1 } else { self.preview };
     let (seq, current) = state.seq.clone().push(piece, length);
