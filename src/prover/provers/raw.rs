@@ -11,7 +11,7 @@ struct WorkingRawProver<U: Poset, T: States> {
   states: T
 }
 impl<U: Poset, T: States> WorkingRawProver<U, T> {
-  fn get_next(&self, state: usize) -> ArrayVec<Vec<usize>, 7> {
+  fn get_next(&self, state: usize) -> ArrayVec<Branch, 7> {
     self.states.true_get_next(state, |v| {
       let mut result = vec![];
       for i in v.into_iter().map(|i| self.mapping[i]) {
@@ -20,10 +20,10 @@ impl<U: Poset, T: States> WorkingRawProver<U, T> {
         }
       }
       result.sort_unstable();
-      result
+      Branch(result)
     })
   }
-  fn split_nodes(&self, nexts: Vec<ArrayVec<Vec<usize>, 7>>) -> impl Iterator<Item=(usize, usize)> {
+  fn split_nodes(&self, nexts: Vec<ArrayVec<Branch, 7>>) -> impl Iterator<Item=(usize, usize)> {
     let branches = nexts.iter()
       .flatten()
       .collect::<HashSet<_>>()
@@ -40,7 +40,6 @@ impl<U: Poset, T: States> WorkingRawProver<U, T> {
         .map(|next| Next(next.into_iter().map(|next| branch_to_id[&next]).collect::<ArrayVec<_, 7>>()))
         .collect_vec()
     };
-    let branches = branches.into_iter().map(|s| Branch(s)).collect_vec();
     let branch_geqs = branches.iter().flat_map(|left| {
       branches.iter().map(move |right| left.is_geq(right, |l, r| self.poset.is_geq(l, r)))
     }).collect::<Vec<_>>();
@@ -127,12 +126,8 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
     eprintln!("try remove edges");
     let false_edges = self.poset.get_reduction()
       .filter(|&(left, right)| {
-        let left = self.get_next(left).into_iter()
-          .map(|s| Branch(s))
-          .collect::<ArrayVec<_, 7>>();
-        let right = self.get_next(right).into_iter()
-          .map(|s| Branch(s))
-          .collect::<ArrayVec<_, 7>>();
+        let left = self.get_next(left);
+        let right = self.get_next(right);
         let left_next = Next((0..left.len()).collect());
         let right_next = Next((0..right.len()).collect());
         !left_next.is_geq(&right_next, |left_id, right_id| {
@@ -151,7 +146,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
   }
   fn get_concrete(self) -> ConcreteMappedStates<T> {
     let nexts = (0..self.poset.len())
-      .map(|i| self.get_next(i))
+      .map(|i| self.get_next(i).into_iter().map(|s| s.0))
       .collect();
     ConcreteMappedStates {
       original: self.states,

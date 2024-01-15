@@ -8,6 +8,7 @@ pub use posets::*;
 mod provers;
 pub use provers::*;
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 struct Branch(Vec<usize>);
 impl Branch {
   fn is_geq(&self, other: &Self, geq: impl Fn(usize, usize) -> bool) -> bool {
