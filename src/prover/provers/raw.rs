@@ -42,7 +42,7 @@ impl<U: Poset, T: States> WorkingRawProver<U, T> {
     };
     let branches = branches.into_iter().map(|s| Branch(s)).collect_vec();
     let branch_geqs = branches.iter().flat_map(|left| {
-      branches.iter().map(move |right| left.is_geq(right, &self.poset))
+      branches.iter().map(move |right| left.is_geq(right, |l, r| self.poset.is_geq(l, r)))
     }).collect::<Vec<_>>();
     let comperator = move |left: usize, right: usize| branch_geqs[left * branches_len + right];
     nexts.into_iter()
@@ -136,7 +136,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
         let left_next = Next((0..left.len()).collect());
         let right_next = Next((0..right.len()).collect());
         !left_next.is_geq(&right_next, |left_id, right_id| {
-          left[left_id].is_geq(&right[right_id], &self.poset)
+          left[left_id].is_geq(&right[right_id], |l, r| self.poset.is_geq(l, r))
         })
       })
       .collect_vec();

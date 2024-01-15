@@ -1,8 +1,8 @@
 use arrayvec::ArrayVec;
 use rs_graph::{maxflow::{PushRelabel, MaxFlow}, vecgraph::VecGraphBuilder, Builder};
 use std::collections::HashSet;
+use crate::states::*;
 
-use super::Pruner;
 mod posets;
 pub use posets::*;
 mod provers;
@@ -10,9 +10,9 @@ pub use provers::*;
 
 struct Branch(Vec<usize>);
 impl Branch {
-  fn is_geq<U: Poset>(&self, other: &Self, poset: &U) -> bool {
+  fn is_geq(&self, other: &Self, geq: impl Fn(usize, usize) -> bool) -> bool {
     // max(left) >= max(right) <=> forall i in right, exists j in left, j >= i
-    other.0.iter().all(|&r| self.0.iter().any(|&l| poset.is_geq(l as usize, r as usize)))
+    other.0.iter().all(|&r| self.0.iter().any(|&l| geq(l, r)))
   }
 }
 
@@ -58,4 +58,8 @@ impl Next {
     });
     push_relabel.value() == left_len * right_len
   }
+}
+
+pub trait ProvePruner {
+  fn prune<T: States>(states: MappedStates<T>) -> ConcreteMappedStates<T>;
 }

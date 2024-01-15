@@ -2,6 +2,7 @@ mod basics;
 mod evaluator;
 mod minimizer;
 mod printer;
+mod prover;
 mod pruner;
 mod states;
 
@@ -9,6 +10,7 @@ use basics::*;
 use evaluator::*;
 use minimizer::*;
 use printer::*;
+use prover::*;
 use pruner::*;
 use states::*;
 use std::collections::HashMap;
