@@ -30,6 +30,36 @@ impl<T: States> States for MappedStates<T> {
   }
 }
 
+#[derive(Clone)]
+pub struct ConcreteMappedStates<T: States> {
+  pub original: T,
+  pub mapping: Vec<usize>,
+  pub nexts: Continuation
+}
+
+impl<T: States> States for ConcreteMappedStates<T> {
+  type State = usize;
+  type Branch = (usize, usize);
+  fn encode(&self, state: &Self::State) -> Option<usize> {
+    Some(*state)
+  }
+  fn decode(&self, index: usize) -> Option<Self::State> {
+    Some(index)
+  }
+  fn next_pieces(&self, state: Self::State) -> impl Iterator<Item=Self::Branch> {
+    self.nexts.cont_index[state].iter().cloned()
+  }
+  fn next_states(&self, (left, right): Self::Branch) -> impl Iterator<Item=Self::State> {
+    self.nexts.continuations[left..right].iter().cloned()
+  }
+}
+
+impl<T: States> HasLength for ConcreteMappedStates<T> {
+  fn len(&self) -> usize {
+    self.nexts.len()
+  }
+}
+
 impl<T: States> MappedStates<MappedStates<T>> {
   pub fn compose(mut self) -> MappedStates<T> {
     self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
@@ -55,5 +85,27 @@ impl<T: States> MappedStates<ConcreteMappedStates<T>> {
       self.inverse.into_iter().map(|i| self.original.get_next(i, &*self.mapping)).collect();
     self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
     self.original
+  }
+}
+
+impl<T: States> ConcreteMappedStates<MappedStates<T>> {
+  pub fn compose(mut self) -> ConcreteMappedStates<T> {
+    self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
+    ConcreteMappedStates {
+      original: self.original.original,
+      mapping: self.original.mapping,
+      nexts: self.nexts
+    }
+  }
+}
+
+impl<T: States> ConcreteMappedStates<ConcreteMappedStates<T>> {
+  pub fn compose(mut self) -> ConcreteMappedStates<T> {
+    self.original.mapping.par_iter_mut().for_each(|i| *i = self.mapping[*i]);
+    ConcreteMappedStates {
+      original: self.original.original,
+      mapping: self.original.mapping,
+      nexts: self.nexts
+    }
   }
 }

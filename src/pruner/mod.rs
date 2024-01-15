@@ -1,5 +1,7 @@
 mod plain;
 pub use plain::*;
+mod prove;
+pub use prove::*;
 
 use crate::states::*;
 
@@ -7,7 +9,7 @@ use crate::states::*;
 // specifically, use evaluation for good proof initialization
 // and then remove from both the input and the output pairs that does not prove
 // BUT: why not just use every relationship as a startpoint?
-pub trait Pruner<T: States> {
-  fn prune(states: MappedStates<T>) -> ConcreteMappedStates<T>;
-  fn prune_concrete(states: ConcreteMappedStates<T>) -> (ConcreteMappedStates<T>, bool);
+pub trait Pruner {
+  fn prune<T: States>(states: MappedStates<T>) -> ConcreteMappedStates<T>;
+  fn prune_concrete<T: States>(states: ConcreteMappedStates<T>) -> (ConcreteMappedStates<T>, bool);
 }

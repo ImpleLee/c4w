@@ -7,11 +7,11 @@ use rayon::prelude::*;
 
 pub struct PlainPruner;
 
-impl<T: States> Pruner<T> for PlainPruner {
-  fn prune(states: MappedStates<T>) -> ConcreteMappedStates<T> {
+impl Pruner for PlainPruner {
+  fn prune<T: States>(states: MappedStates<T>) -> ConcreteMappedStates<T> {
     unimplemented!()
   }
-  fn prune_concrete(mut plain_states: ConcreteMappedStates<T>) -> (ConcreteMappedStates<T>, bool) {
+  fn prune_concrete<T: States>(mut plain_states: ConcreteMappedStates<T>) -> (ConcreteMappedStates<T>, bool) {
     let states = &plain_states;
     let mut greater_than = (0..states.len())
       .into_par_iter()
