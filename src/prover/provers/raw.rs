@@ -86,13 +86,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
         let nexts = nexts.into_iter()
           .map(|(next, _)| next)
           .collect_vec();
-        let geqs = self.split_nodes(nexts).group_by(|&(left, _)| left);
-        let mut geqs = geqs.into_iter().collect_vec();
-        geqs.sort_unstable_by_key(|&(id, _)| id);
-        let geqs = geqs.into_iter()
-          .map(|(_, s)| s.map(|(_, j)| j).collect_vec())
-          .collect_vec();
-        Some(U::from_dag(geqs))
+        Some(U::new(nexts.len(), self.split_nodes(nexts)))
       })
       .collect_vec().into_iter()
       .enumerate()
@@ -160,7 +154,7 @@ pub struct RawProver<U: Poset>(PhantomData<U>);
 impl<U: Poset> Prover for RawProver<U> {
   fn new<T: States>(states: T) -> impl WorkingProver<T> {
     WorkingRawProver {
-      poset: U::from_dag(vec![vec![]]),
+      poset: U::new(1, std::iter::empty()),
       mapping: vec![0 as usize; states.len()],
       states
     }
