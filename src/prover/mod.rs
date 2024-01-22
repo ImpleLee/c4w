@@ -62,5 +62,5 @@ impl Next {
 }
 
 pub trait ProvePruner {
-  fn prune<T: States>(states: MappedStates<T>) -> ConcreteMappedStates<T>;
+  fn prune<T: States>(states: ConcreteMappedStates<T>) -> ConcreteMappedStates<T>;
 }

@@ -1,8 +1,11 @@
+mod raw;
+pub use raw::*;
+
 pub trait Poset {
-  fn new(size: usize, geqs: impl Iterator<Item=(usize, usize)>) -> Self;
+  fn new(size: usize, relations: Vec<Vec<bool>>) -> Self;
   fn len(&self) -> usize;
-  fn is_geq(&self, left: usize, right: usize) -> bool;
-  fn get_reduction(&self) -> impl Iterator<Item=(usize, usize)>;
-  fn remove_edge(&mut self, left: usize, right: usize);
+  fn has_relation(&self, left: usize, right: usize) -> bool;
+  fn verify_edges(&mut self, verifier: impl Fn(&Self, usize, usize) -> bool + std::marker::Sync + std::marker::Send) -> bool;
   fn replace(&mut self, node: usize, replacement: Self);
+  fn report(&self);
 }

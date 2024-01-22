@@ -15,7 +15,7 @@ trait Prover {
 }
 
 impl<B: Prover> ProvePruner for B {
-  fn prune<T: States>(states: MappedStates<T>) -> ConcreteMappedStates<T> {
+  fn prune<T: States>(states: ConcreteMappedStates<T>) -> ConcreteMappedStates<T> {
     let mut pruner = B::new(states);
     while pruner.try_replace_node() || pruner.try_remove_edges() {
     }
