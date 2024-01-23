@@ -203,9 +203,8 @@ impl Poset for HierarchDAG {
   }
   fn verify_edges(&mut self, verifier: impl Fn(&Self, usize, usize) -> bool + std::marker::Sync + std::marker::Send) -> bool {
     self.check();
-    let mut checked_edges = vec![];
-    for dag in self.dags.iter() {
-      checked_edges.push(dag.edges.par_iter()
+    let checked_edges = self.dags.iter().map(|dag|
+      dag.edges.par_iter()
         .enumerate()
         .map(|(i, v)|
           v.par_iter()
@@ -224,8 +223,8 @@ impl Poset for HierarchDAG {
             })
             .collect::<Vec<_>>()
         )
-        .collect::<Vec<_>>())
-    }
+        .collect::<Vec<_>>()
+    ).collect::<Vec<_>>();
     let len_changed_edges = self.dags.iter_mut().zip(checked_edges.into_iter())
       .map(|(dag, mut checked_edges)| {
         std::mem::swap(&mut dag.edges, &mut checked_edges);
