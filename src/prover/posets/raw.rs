@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use itertools::Itertools;
 use rayon::prelude::*;
 
@@ -42,53 +40,8 @@ impl DAG {
     // ret.check();
     ret
   }
-  fn get_topo_order(size: usize, relation: impl Fn(usize, usize) -> bool + std::marker::Sync) -> Vec<usize> {
-    let mut result = (0..size).collect::<Vec<_>>();
-    result.par_sort_by_cached_key(|&id| std::cmp::Reverse((0..size).filter(|&other| relation(id, other)).count()));
-    result
-  }
-  fn get_rev_reduction(topo_order: Vec<usize>, relation: impl Fn(usize, usize) -> bool) -> impl Iterator<Item=(usize, Vec<usize>)> {
-    let rev_topo_order = {
-      let mut result = vec![0; topo_order.len()];
-      for (i, &id) in topo_order.iter().enumerate() {
-        result[id] = i;
-      }
-      result
-    };
-    let mut result = vec![vec![]; topo_order.len()];
-    let mut marks = vec![false; topo_order.len()];
-    (1..topo_order.len()).map(move |i| {
-      for j in 0..i {
-        marks[j] = false;
-      }
-      for j in (0..i).rev() {
-        if relation(topo_order[j], topo_order[i]) {
-          if !marks[j] {
-            result[topo_order[i]].push(topo_order[j]);
-            marks[j] = true;
-          }
-        }
-        if marks[j] {
-          for &k in result[topo_order[j]].iter() {
-            marks[rev_topo_order[k]] = true;
-          }
-        }
-      }
-      (topo_order[i], result[topo_order[i]].clone())
-    })
-  }
   fn has_relation(&self, left: usize, right: usize) -> bool {
     self.edges[left][right]
-  }
-  fn header(&self) -> impl Iterator<Item=usize> + '_ {
-    (0..self.nodes.len()).filter(move |&i| self.edges.iter().enumerate().all(|(j, v)| i == j || !v[i]))
-  }
-  fn footer(&self) -> impl Iterator<Item=usize> + '_ {
-    self.edges.iter().enumerate().filter(move |&(i, v)| v.iter().enumerate().all(|(j, &e)| i == j || !e)).map(|(i, _)| i)
-  }
-  fn remove_edge(&mut self, left: usize, right: usize) {
-    assert!(self.edges[left][right]);
-    self.edges[left][right] = false;
   }
   fn merge(&mut self, node: usize, replacement: Self) {
     assert!(node < self.nodes.len());
@@ -168,34 +121,6 @@ impl HierarchDAG {
   }
   fn at(&self, node: NodeRef) -> Node {
     self.dags[node.dag].nodes[node.node]
-  }
-  fn for_direct_outs(&self, node: NodeRef, mut merging_stack: &mut Vec<usize>, f: &mut impl FnMut(usize, &mut Vec<usize>)) {
-    match self.at(node) {
-      Node::RealNode { id } => {
-        f(id, merging_stack);
-      }
-      Node::ReplacedNode { dag } => {
-        merging_stack.push(dag);
-        for i in self.dags[dag].footer() {
-          self.for_direct_outs(NodeRef { dag, node: i }, &mut merging_stack, f);
-        }
-        merging_stack.pop();
-      }
-    }
-  }
-  fn for_direct_ins(&self, node: NodeRef, mut merging_stack: &mut Vec<usize>, f: &mut impl FnMut(usize, &mut Vec<usize>)) {
-    match self.at(node) {
-      Node::RealNode { id } => {
-        f(id, merging_stack);
-      }
-      Node::ReplacedNode { dag } => {
-        merging_stack.push(dag);
-        for i in self.dags[dag].header() {
-          self.for_direct_ins(NodeRef { dag, node: i }, &mut merging_stack, f);
-        }
-        merging_stack.pop();
-      }
-    }
   }
   fn check(&self) {
     return;
@@ -278,74 +203,43 @@ impl Poset for HierarchDAG {
   }
   fn verify_edges(&mut self, verifier: impl Fn(&Self, usize, usize) -> bool + std::marker::Sync + std::marker::Send) -> bool {
     self.check();
-    let mut false_edges = vec![];
+    let mut checked_edges = vec![];
     for dag in self.dags.iter() {
-      let topo_order = DAG::get_topo_order(dag.nodes.len(), |i, j| dag.edges[i][j]);
-      let false_edge = DAG::get_rev_reduction(topo_order, |i, j| dag.edges[i][j]).par_bridge()
-        .flat_map(|(j, v)| v.into_par_iter().map(move |i| (i, j)))
-        .filter(|&(i, j)| {
-          let Node::RealNode { id: id_i } = dag.nodes[i] else {
-            return false;
-          };
-          let Node::RealNode { id: id_j } = dag.nodes[j] else {
-            return false;
-          };
-          !verifier(self, id_i, id_j)
+      checked_edges.push(dag.edges.par_iter()
+        .enumerate()
+        .map(|(i, v)|
+          v.par_iter()
+            .enumerate()
+            .map(|(j, &connected)| {
+              if !connected {
+                return false;
+              }
+              let Node::RealNode { id: id_i } = dag.nodes[i] else {
+                return true;
+              };
+              let Node::RealNode { id: id_j } = dag.nodes[j] else {
+                return true;
+              };
+              verifier(self, id_i, id_j)
+            })
+            .collect::<Vec<_>>()
+        )
+        .collect::<Vec<_>>())
+    }
+    let len_changed_edges = self.dags.iter_mut().zip(checked_edges.into_iter())
+      .map(|(dag, mut checked_edges)| {
+        std::mem::swap(&mut dag.edges, &mut checked_edges);
+        checked_edges.into_iter().zip(dag.edges.iter())
+          .map(|(edges, check_edges)| {
+          edges.into_iter().zip(check_edges.iter())
+            .filter(|&(connected, &checked)| connected != checked)
+            .count()
         })
-        .collect::<Vec<_>>();
-      false_edges.push(false_edge);
-    }
-    let len_false_edges = false_edges.iter().map(|v| v.len()).sum::<usize>();
-    eprintln!("found {} internal false edges", len_false_edges);
-    if len_false_edges > 0 {
-      for (d, v) in false_edges.into_iter().enumerate() {
-        for (i, j) in v {
-          self.dags[d].remove_edge(i, j);
-        }
-      }
-      self.check();
-      return true;
-    }
-    let mut false_edges = vec![];
-    let mut merged_dags = HashSet::new();
-    for (d, dag) in self.dags.iter().enumerate() {
-      let topo_order = DAG::get_topo_order(dag.nodes.len(), |i, j| dag.edges[i][j]);
-      for (i, j) in DAG::get_rev_reduction(topo_order, |i, j| dag.edges[i][j])
-        .into_iter()
-        .flat_map(|(j, v)| v.into_iter().map(move |i| (i, j))) {
-        if matches!((dag.nodes[i], dag.nodes[j]), (Node::RealNode { .. }, Node::RealNode { .. })) {
-          continue;
-        }
-        let mut merging_stack = Vec::with_capacity(self.dags.len());
-        self.for_direct_outs(NodeRef{ dag: d, node: i }, &mut merging_stack, &mut |i, mut merging_stack| {
-          self.for_direct_ins(NodeRef { dag: d, node: j }, &mut merging_stack, &mut |j, merging_stack| {
-            if !verifier(self, i, j) {
-              false_edges.push((i, j));
-              merged_dags.extend(merging_stack.iter().cloned())
-            }
-          })
-        });
-        assert!(merging_stack.is_empty());
-      }
-    }
-    if false_edges.is_empty() {
-      return false;
-    }
-    eprintln!("found {} cross-dag false edges", false_edges.len());
-    eprintln!("have to merge {} dags", merged_dags.len());
-    let mut merged_dags = merged_dags.into_iter().collect_vec();
-    merged_dags.sort();
-    for dag in merged_dags.into_iter().rev() {
-      self.merge(dag);
-    }
-    self.check();
-    for (i, j) in false_edges {
-      assert_eq!(self.id2node[i].dag, self.id2node[j].dag);
-      let dag = self.id2node[i].dag;
-      self.dags[dag].remove_edge(self.id2node[i].node, self.id2node[j].node);
-    }
-    self.check();
-    true
+        .sum::<usize>()
+      })
+      .sum::<usize>();
+    eprintln!("found {} internal false edges", len_changed_edges);
+    len_changed_edges > 0
   }
   fn replace(&mut self, node: usize, replacement: Self) {
     assert!(node < self.len());
@@ -383,6 +277,9 @@ impl Poset for HierarchDAG {
         .skip(1)
         .map(change_noderef)
     );
+    self.merge(dag_delta);
+    self.dags.truncate(dag_delta);
+    self.ancestors.truncate(dag_delta);
     self.check();
   }
 }
