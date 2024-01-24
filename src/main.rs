@@ -14,6 +14,7 @@ use prover::*;
 use pruner::*;
 use states::*;
 use std::collections::HashMap;
+use clap::Parser;
 
 fn report<T: States>(minimized: &ConcreteMappedStates<T>) {
   eprintln!(
@@ -22,7 +23,7 @@ fn report<T: States>(minimized: &ConcreteMappedStates<T>) {
     minimized.nexts.continuations.len(),
     minimized.mapping.len()
   );
-  let mut count_by_choices = vec![0; 7];
+  let mut count_by_choices = vec![0; 14];
   for next in &minimized.nexts.cont_index {
     for &(begin, end) in next {
       count_by_choices[end - begin] += 1;
@@ -31,12 +32,30 @@ fn report<T: States>(minimized: &ConcreteMappedStates<T>) {
   eprintln!("count_by_choices: {:?}", count_by_choices);
 }
 
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Number of previews
+    #[arg(long)]
+    preview: usize,
+
+    /// Whether hold is enabled
+    #[arg(long)]
+    hold: bool,
+
+    /// the path to the continuation file
+    #[arg(long)]
+    continuation: std::path::PathBuf,
+}
+
 fn main() {
+  let args = Args::parse();
   let continuations: HashMap<Field, HashMap<Piece, Vec<Field>>> =
-    bincode::deserialize_from(std::io::stdin().lock()).unwrap();
+    bincode::deserialize_from(std::fs::File::open(args.continuation).unwrap()).unwrap();
   eprintln!("{}", continuations.len());
 
-  let build_states = || FieldSequenceStates::<BagSequenceStates>::new(&continuations, 4, true);
+  let build_states = || FieldSequenceStates::<BagSequenceStates>::new(&continuations, args.preview, args.hold);
   let num2state = build_states();
   eprintln!("{}", (&num2state).len());
 

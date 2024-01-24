@@ -19,6 +19,7 @@ dashmap = { version = "5.2.0", features = ["rayon"] }
 hopcroft-karp = "0.2.1"
 rs-graph = "0.20.1"
 sucds = "0.7.0"
+clap = { version = "4.4.18", features = ["derive"] }
 
 [profile.release]
 lto = true
