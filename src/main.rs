@@ -73,7 +73,7 @@ fn main() {
     }
   }
 
-  let proved = RawProver::<DAG>::prune(minimized);
+  let proved = RawProver::<BitVectorPoset>::prune(minimized);
   report(&proved);
 
   return;
