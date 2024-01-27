@@ -73,7 +73,7 @@ fn main() {
     }
   }
 
-  let proved = RawProver::<HierarchDAG>::prune(minimized);
+  let proved = RawProver::<DAG>::prune(minimized);
   report(&proved);
 
   return;
