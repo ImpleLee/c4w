@@ -1,7 +1,5 @@
 mod raw;
 pub use raw::*;
-mod bitvec;
-pub use bitvec::*;
 
 pub trait Poset {
   fn new(size: usize, relations: Vec<Vec<bool>>) -> Self;

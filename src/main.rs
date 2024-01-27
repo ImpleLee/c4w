@@ -73,7 +73,7 @@ fn main() {
     }
   }
 
-  let proved = RawProver::<BitVectorPoset>::prune(minimized);
+  let proved = RawProver::<MatrixPoset<Vec<bool>>>::prune(minimized);
   report(&proved);
 
   return;
