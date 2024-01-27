@@ -11,7 +11,6 @@ impl MatrixPoset {
     for edges in self.edges.iter() {
       assert_eq!(self.len(), edges.len());
     }
-    return;
     (0..self.len()).into_par_iter()
       .for_each(|i| {
         (0..self.len()).into_par_iter()
@@ -40,7 +39,7 @@ impl Poset for MatrixPoset {
     let ret = Self {
       edges,
     };
-    // ret.check();
+    ret.check();
     ret
   }
   fn report(&self) {

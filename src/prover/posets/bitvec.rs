@@ -74,14 +74,16 @@ impl Poset for BitVectorPoset {
     let mut checked_edges = self.edges.par_iter()
       .enumerate()
       .map(|(i, v)|
-        BitVector::from_bits(v.iter()
-          .enumerate()
-          .map(|(j, connected)| {
-            if !connected {
+        BitVector::from_bits((0..v.len())
+          .into_par_iter()
+          .map(|j| {
+            if !v.access(j).unwrap() {
               return false;
             }
             verifier(self, i, j)
-          }))
+          })
+          .collect::<Vec<_>>()
+        )
       )
       .collect::<Vec<_>>();
     let len_changed_edges =  {
