@@ -10,7 +10,7 @@ pub trait BoolVec:
   fn len(&self) -> usize;
   fn get(&self, index: usize) -> Option<bool>;
   fn set(&mut self, index: usize, value: bool);
-  fn iter(&self) -> impl Iterator<Item = bool> + '_;
+  fn iter(&self) -> impl '_+Iterator<Item=bool>;
 }
 
 pub struct MatrixPoset<V: BoolVec> {
@@ -79,7 +79,7 @@ impl<V: BoolVec> Poset for MatrixPoset<V> {
     }));
     self.edges[node].extend(replacement.edges[0].iter().skip(1));
   }
-  fn verify_edges(&mut self, verifier: impl Fn(&Self, usize, usize) -> bool + std::marker::Sync + std::marker::Send) -> bool {
+  fn verify_edges(&mut self, verifier: impl std::marker::Sync+std::marker::Send+Fn(&Self, usize, usize) -> bool) -> bool {
     self.check();
     let mut checked_edges = self.edges.par_iter()
       .enumerate()
@@ -120,7 +120,7 @@ impl BoolVec for Vec<bool> {
   fn set(&mut self, index: usize, value: bool) {
     self[index] = value;
   }
-  fn iter(&self) -> impl Iterator<Item = bool> + '_ {
+  fn iter(&self) -> impl '_+Iterator<Item=bool> {
     self.as_slice().iter().cloned()
   }
 }
@@ -129,12 +129,12 @@ impl BoolVec for Vec<bool> {
 pub struct BitVector(OtherBitVector);
 
 impl FromIterator<bool> for BitVector {
-  fn from_iter<T: IntoIterator<Item = bool>>(iter: T) -> Self {
+  fn from_iter<T: IntoIterator<Item=bool>>(iter: T) -> Self {
     Self(OtherBitVector::from_bits(iter))
   }
 }
 impl Extend<bool> for BitVector {
-  fn extend<T: IntoIterator<Item = bool>>(&mut self, iter: T) {
+  fn extend<T: IntoIterator<Item=bool>>(&mut self, iter: T) {
     self.0.extend(iter);
   }
 }
@@ -149,7 +149,7 @@ impl BoolVec for BitVector {
   fn set(&mut self, index: usize, value: bool) {
     self.0.set_bit(index, value).unwrap();
   }
-  fn iter(&self) -> impl Iterator<Item = bool> + '_ {
+  fn iter(&self) -> impl '_+Iterator<Item=bool> {
     self.0.iter()
   }
 }
