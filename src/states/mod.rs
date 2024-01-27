@@ -114,7 +114,7 @@ impl Sequence for u64 {
   }
 }
 
-impl<'a> Sequence for VecDeque<Piece> {
+impl Sequence for VecDeque<Piece> {
   fn push(mut self, piece: Piece, _: usize) -> (Self, Piece) {
     self.push_back(piece);
     let current = self.pop_front().unwrap();
@@ -128,7 +128,7 @@ impl<'a> Sequence for VecDeque<Piece> {
 }
 
 pub trait GetNext {
-  fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
+  fn true_get_next<I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
     maximal_func: F
@@ -166,7 +166,7 @@ fn next2id(nexts: ArrayVec<Vec<usize>, 7>) -> Vec<usize> {
 }
 
 impl<T: States> GetNext for T {
-  fn true_get_next<'a, I: Ord, F: Fn(Vec<usize>) -> I>(
+  fn true_get_next<I: Ord, F: Fn(Vec<usize>) -> I>(
     &self,
     i: usize,
     maximal_func: F
@@ -174,7 +174,6 @@ impl<T: States> GetNext for T {
     let state = self.decode(i).unwrap();
     let mut nexts: ArrayVec<_, 7> = self
       .next_pieces(state)
-      .into_iter()
       .map(|piece| {
         let next =
           self.next_states(piece).map(|state| self.encode(&state).unwrap()).collect_vec();

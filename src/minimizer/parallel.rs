@@ -41,7 +41,7 @@ impl Minimizer for ParallelMinimizer {
       }
       mapping = new_mapping;
       eprintln!("minimized states: {}", inverse.len());
-      if local_seeds.len() == 0 {
+      if local_seeds.is_empty() {
         break;
       }
       let seed_dedup = local_seeds

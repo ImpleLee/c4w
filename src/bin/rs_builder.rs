@@ -101,7 +101,7 @@ impl FieldDummy for Field {
     Field([self.0[3], self.0[2], self.0[1], self.0[0]])
   }
   fn clearable(&self) -> bool {
-    let culmulated = self.0.iter().fold(!0 as u8, |acc, &x| acc & x);
+    let culmulated = self.0.iter().fold(!0, |acc, &x| acc & x);
     culmulated != 0
   }
   fn clear_line(&self) -> (usize, Self) {
@@ -110,7 +110,7 @@ impl FieldDummy for Field {
     if !field.clearable() {
       return (0, field);
     }
-    let culmulated = field.0.iter().fold(!0 as u8, |acc, &x| acc & x);
+    let culmulated = field.0.iter().fold(!0, |acc, &x| acc & x);
     for i in 0..8 {
       if culmulated & (1 << i) == 0 {
         continue;

@@ -21,7 +21,7 @@ impl LoopFinder {
         .collect::<Vec<_>>();
       reversed_edges.par_sort_unstable();
       reversed_edges.dedup();
-      let mut reversed_edge_index = vec![(0 as usize, 0 as usize); states.len()];
+      let mut reversed_edge_index = vec![(0_usize, 0_usize); states.len()];
       let mut last = 0;
       let mut first = 0;
       for (index, (from, _)) in reversed_edges.iter().enumerate() {

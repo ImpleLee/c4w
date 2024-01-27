@@ -1,5 +1,5 @@
 use super::*;
-use average::{Estimate, Max, Mean, Merge};
+use average::{Estimate, Max, Merge};
 use rayon::prelude::*;
 
 pub struct ValueIterator<'a, T: States> {

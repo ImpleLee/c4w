@@ -72,7 +72,7 @@ impl<'b, S: SequenceStates> Creatable<'b> for FieldSequenceStates<S> {
     preview: usize,
     hold: bool
   ) -> Self {
-    let base: Vec<_> = PIECES.iter().cloned().collect();
+    let base: Vec<_> = PIECES.to_vec();
     let (fields, continuations) = Continuation::new(continuations);
     let sequence = S::new(preview, base.len());
     assert!(
@@ -130,12 +130,12 @@ impl SequenceStates for BagSequenceStates {
   type Proxy = (Self::State, usize);
   fn new(preview: usize, base_len: usize) -> Self {
     type State = (VecDeque<usize>, Vec<bool>);
-    struct BFS {
+    struct Bfs {
       mapping: HashMap<State, usize>,
       inverse: VecDeque<State>,
       base_len: usize
     }
-    impl BFS {
+    impl Bfs {
       fn find_or_insert(&mut self, state: State) -> usize {
         let len = self.mapping.len();
         *self.mapping.entry(state.clone()).or_insert_with(|| {
@@ -145,7 +145,7 @@ impl SequenceStates for BagSequenceStates {
         })
       }
     }
-    impl Iterator for BFS {
+    impl Iterator for Bfs {
       type Item = ArrayVec<(usize, usize), 7>;
       fn next(&mut self) -> Option<Self::Item> {
         (!self.inverse.is_empty()).then(move || {
@@ -170,7 +170,7 @@ impl SequenceStates for BagSequenceStates {
         })
       }
     }
-    let mut bfs = BFS { mapping: Default::default(), inverse: Default::default(), base_len };
+    let mut bfs = Bfs { mapping: Default::default(), inverse: Default::default(), base_len };
     bfs.find_or_insert({
       let seq: VecDeque<usize> = (0..preview).map(|i| i % base_len).collect();
       let available = (0..base_len).map(|i| i > seq.back().copied().unwrap_or(base_len)).collect();

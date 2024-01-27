@@ -1,8 +1,8 @@
 use crate::states::States;
-use average::Mean;
-use itertools::Itertools;
-use ordered_float::NotNan;
-use rayon::prelude::*;
+
+
+
+
 
 pub trait Printer {
   fn print<T: States>(field2state: &[usize], values: &[f64], num2state: &T);
