@@ -17,9 +17,7 @@ impl<U: Poset, T: States> WorkingRawProver<U, T> {
     states.true_get_next(state, |v| {
       let mut result = vec![];
       for i in v.into_iter().map(|i| mapping[i]) {
-        result = result.into_iter()
-          .filter(|&j| !poset.has_relation(i, j))
-          .collect();
+        result.retain(|&j| !poset.has_relation(i, j));
         if result.iter().all(|&j| !poset.has_relation(j, i)) {
           result.push(i)
         }
@@ -115,7 +113,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
       return false;
     }
     self.mapping.iter_mut()
-      .zip(new_mapping.into_iter())
+      .zip(new_mapping)
       .for_each(|(old, new)| {
         if new == 0 {
           return;
@@ -135,10 +133,10 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
       let right = Self::static_get_next(poset, &self.mapping, &self.states, self.seeds[right]);
       let left_next = Next((0..left.len()).collect());
       let right_next = Next((0..right.len()).map(|i| i + left.len()).collect());
-      let result = left_next.is_geq(&right_next, |left_id, right_id| {
+      
+      left_next.is_geq(&right_next, |left_id, right_id| {
         left[left_id].is_geq(&right[right_id - left.len()], |l, r| poset.has_relation(l, r))
-      });
-      result
+      })
     });
     eprint!("after removing edges: ");
     self.poset.report();
@@ -161,7 +159,7 @@ impl<U: Poset> Prover for RawProver<U> {
   fn new<T: States>(states: T) -> impl WorkingProver<T> {
     WorkingRawProver {
       poset: U::new(1, vec![vec![true]]),
-      mapping: vec![0 as usize; states.len()],
+      mapping: vec![0_usize; states.len()],
       seeds: vec![0],
       states
     }

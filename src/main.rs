@@ -9,7 +9,7 @@ mod states;
 use basics::*;
 use evaluator::*;
 use minimizer::*;
-use printer::*;
+
 use prover::*;
 use pruner::*;
 use states::*;
@@ -57,7 +57,7 @@ fn main() {
 
   let build_states = || FieldSequenceStates::<BagSequenceStates>::new(&continuations, args.preview, args.hold);
   let num2state = build_states();
-  eprintln!("{}", (&num2state).len());
+  eprintln!("{}", num2state.len());
 
   let mut minimized = ParallelMinimizer::minimize(num2state).concrete();
   report(&minimized);

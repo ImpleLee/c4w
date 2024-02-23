@@ -16,12 +16,11 @@ impl Pruner for PlainPruner {
         let state = states.decode(i).unwrap();
         let mut edges = states
           .next_pieces(state)
-          .map(|piece| {
+          .flat_map(|piece| {
             let nexts =
               states.next_states(piece).map(|s| states.encode(&s).unwrap()).collect_vec();
             iproduct!(nexts.clone().into_iter(), nexts.into_iter()).filter(|(x, y)| x < y)
           })
-          .flatten()
           .collect_vec();
         edges.sort_unstable();
         edges.dedup();
@@ -48,8 +47,8 @@ impl Pruner for PlainPruner {
           .filter_map(|(&x, &y)| greater_than.binary_search(&(x, y)).ok().map(|_| y))
           .collect_vec();
         let mut new_nexts = nexts
-          .into_iter()
-          .filter_map(move |x| (!edges.contains(x)).then_some(x.clone()))
+          .iter()
+          .filter_map(move |x| (!edges.contains(x)).then_some(*x))
           .collect_vec();
         let true_len = new_nexts.len();
         if *j - *i == true_len {
@@ -95,9 +94,9 @@ fn find_smaller<T: States>(states: &T, u1: usize, u2: usize) -> Option<(usize, u
   };
   let nexts1 = get_nexts(u1);
   let nexts2 = get_nexts(u2);
-  if nexts1.len() == 0 {
+  if nexts1.is_empty() {
     return Some((u2, u1));
-  } else if nexts2.len() == 0 {
+  } else if nexts2.is_empty() {
     return Some((u1, u2));
   }
 
