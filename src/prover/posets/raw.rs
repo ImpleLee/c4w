@@ -22,6 +22,7 @@ impl<V: BoolVec> MatrixPoset<V> {
     for edges in self.edges.iter() {
       assert_eq!(self.len(), edges.len());
     }
+    return;
     (0..self.len()).into_par_iter()
       .for_each(|i| {
         (0..self.len()).into_par_iter()
