@@ -1,5 +1,5 @@
 use rayon::prelude::*;
-use sucds::bit_vectors::{BitVector as OtherBitVector, prelude::*};
+use bit_vec::BitVec;
 
 use super::Poset;
 
@@ -86,12 +86,7 @@ impl<V: BoolVec> Poset for MatrixPoset<V> {
       .enumerate()
       .map(|(i, v)|
         (0..v.len())
-          .map(|j| {
-            if !v.get(j).unwrap() {
-              return false;
-            }
-            verifier(self, i, j)
-          })
+          .map(|j| v.get(j).unwrap() && verifier(self, i, j))
           .collect::<V>()
       )
       .collect::<Vec<_>>();
@@ -126,31 +121,17 @@ impl BoolVec for Vec<bool> {
   }
 }
 
-#[derive(Clone)]
-pub struct BitVector(OtherBitVector);
-
-impl FromIterator<bool> for BitVector {
-  fn from_iter<T: IntoIterator<Item=bool>>(iter: T) -> Self {
-    Self(OtherBitVector::from_bits(iter))
-  }
-}
-impl Extend<bool> for BitVector {
-  fn extend<T: IntoIterator<Item=bool>>(&mut self, iter: T) {
-    self.0.extend(iter);
-  }
-}
-
-impl BoolVec for BitVector {
+impl BoolVec for BitVec {
   fn len(&self) -> usize {
-    self.0.len()
+    self.len()
   }
   fn get(&self, index: usize) -> Option<bool> {
-    self.0.access(index)
+    self.get(index)
   }
   fn set(&mut self, index: usize, value: bool) {
-    self.0.set_bit(index, value).unwrap();
+    self.set(index, value);
   }
   fn iter(&self) -> impl '_+Iterator<Item=bool> {
-    self.0.iter()
+    self.iter()
   }
 }

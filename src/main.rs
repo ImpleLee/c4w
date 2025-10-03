@@ -15,6 +15,7 @@ use pruner::*;
 use states::*;
 use std::collections::HashMap;
 use clap::Parser;
+use bit_vec::BitVec;
 
 fn report<T: States>(minimized: &ConcreteMappedStates<T>) {
   eprintln!(
@@ -32,7 +33,7 @@ fn report<T: States>(minimized: &ConcreteMappedStates<T>) {
   eprintln!("count_by_choices: {:?}", count_by_choices);
 }
 
-/// Simple program to greet a person
+/// Simple program to minimize the states.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -73,7 +74,7 @@ fn main() {
     }
   }
 
-  let proved = RawProver::<MatrixPoset<Vec<bool>>>::prune(minimized);
+  let proved = RawProver::<MatrixPoset<BitVec>>::prune(minimized);
   report(&proved);
 
   return;

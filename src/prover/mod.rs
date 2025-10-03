@@ -1,5 +1,5 @@
 use arrayvec::ArrayVec;
-use rs_graph::{maxflow::{PushRelabel, MaxFlow}, vecgraph::VecGraphBuilder, Builder};
+use rs_graph::{maxflow::PushRelabel, vecgraph::VecGraphBuilder, Builder};
 
 use crate::states::*;
 
