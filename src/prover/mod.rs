@@ -1,5 +1,5 @@
 use arrayvec::ArrayVec;
-use rs_graph::{maxflow::PushRelabel, vecgraph::VecGraphBuilder, Builder};
+use rs_graph::{maxflow::EdmondsKarp, vecgraph::VecGraphBuilder, Builder};
 
 use crate::states::*;
 
@@ -48,8 +48,8 @@ impl Next {
       }
     }
     let graph = graph_builder.into_graph();
-    let mut push_relabel = PushRelabel::new(&graph);
-    push_relabel.solve(left_node, right_node, |e| {
+    let mut flow = EdmondsKarp::new(&graph);
+    flow.solve(left_node, right_node, |e| {
       if e.index() < left.len() {
         right.len()
       } else if e.index() < left.len() + right.len() {
@@ -58,7 +58,7 @@ impl Next {
         usize::MAX
       }
     });
-    push_relabel.value() == left.len() * right.len()
+    flow.value() == left.len() * right.len()
   }
 }
 
