@@ -122,12 +122,12 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
         assert_ne!(delta, usize::MAX);
         *old = new - 1 + delta;
       });
-    eprint!("after replacement: ");
+    eprint!("=> ");
     self.poset.report();
     true
   }
   fn try_remove_edges(&mut self) -> bool {
-    eprintln!("try remove edges");
+    eprint!("try remove edges: ");
     let found = self.poset.verify_edges(|poset, left, right| {
       let left = Self::static_get_next(poset, &self.mapping, &self.states, self.seeds[left]);
       let right = Self::static_get_next(poset, &self.mapping, &self.states, self.seeds[right]);
@@ -138,7 +138,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
         left[left_id].is_geq(&right[right_id - left.len()], |l, r| poset.has_relation(l, r))
       })
     });
-    eprint!("after removing edges: ");
+    eprint!("=> ");
     self.poset.report();
     found
   }

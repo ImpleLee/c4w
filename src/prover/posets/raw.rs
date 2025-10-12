@@ -8,6 +8,7 @@ pub trait BoolVec:
     + std::marker::Sync + std::marker::Send
     + Clone {
   fn len(&self) -> usize;
+  fn count_ones(&self) -> usize;
   fn get(&self, index: usize) -> Option<bool>;
   fn set(&mut self, index: usize, value: bool);
   fn iter(&self) -> impl '_+Iterator<Item=bool>;
@@ -55,7 +56,7 @@ impl<V: BoolVec> Poset for MatrixPoset<V> {
     ret
   }
   fn report(&self) {
-    eprintln!("poset nodes: {}", self.len());
+    eprintln!("poset nodes: {}, edges: {}", self.len(), self.edges.par_iter().map(|v| v.count_ones()).sum::<usize>());
   }
   fn len(&self) -> usize {
     self.edges.len()
@@ -110,6 +111,9 @@ impl BoolVec for Vec<bool> {
   fn len(&self) -> usize {
     self.len()
   }
+  fn count_ones(&self) -> usize {
+    self.iter().filter(|&b| b).count()
+  }
   fn get(&self, index: usize) -> Option<bool> {
     self.as_slice().get(index).cloned()
   }
@@ -124,6 +128,9 @@ impl BoolVec for Vec<bool> {
 impl BoolVec for BitVec {
   fn len(&self) -> usize {
     self.len()
+  }
+  fn count_ones(&self) -> usize {
+    self.count_ones() as usize
   }
   fn get(&self, index: usize) -> Option<bool> {
     self.get(index)
