@@ -1,6 +1,6 @@
 use crate::states::*;
 
-pub trait SequenceStates: HasLength+std::marker::Sync {
+pub trait SequenceStates: HasLength+std::marker::Sync+serde::Serialize {
   type State: Copy;
   type Proxy: StateWithPiece<Self::State>;
   fn new(preview: usize, base_len: usize) -> Self;
@@ -21,6 +21,7 @@ impl<T: Clone> StateWithPiece<T> for (T, usize) {
   }
 }
 
+#[derive(serde::Serialize)]
 pub struct FieldSequenceStates<S: SequenceStates> {
   fields: Vec<Field>,
   continuations: Continuation,
@@ -94,6 +95,7 @@ impl<S: SequenceStates> FieldSequenceStates<S> {
   }
 }
 
+#[derive(serde::Serialize)]
 pub struct RandomSequenceStates {
   preview: usize,
   base_len: usize

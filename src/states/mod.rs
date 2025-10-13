@@ -29,7 +29,7 @@ pub trait HasLength {
   }
 }
 
-pub trait States: HasLength+std::marker::Sync {
+pub trait States: HasLength+std::marker::Sync+serde::Serialize {
   type State;
   type Branch;
   fn decode(&self, index: usize) -> Option<Self::State>;
@@ -38,7 +38,7 @@ pub trait States: HasLength+std::marker::Sync {
   fn next_states(&self, piece: Self::Branch) -> impl Iterator<Item=Self::State>;
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize)]
 pub struct Continuation<T=usize> {
   pub cont_index: Vec<ArrayVec<(usize, usize), 7>>,
   pub continuations: Vec<T>
