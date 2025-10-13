@@ -42,12 +42,16 @@ struct Args {
     preview: usize,
 
     /// Whether hold is enabled
-    #[arg(long)]
+    #[arg(long, action)]
     hold: bool,
 
     /// the path to the continuation file
     #[arg(long)]
     continuation: std::path::PathBuf,
+
+    /// the path to save the result file
+    #[arg(long)]
+    output: Option<std::path::PathBuf>,
 }
 
 fn main() {
@@ -76,6 +80,10 @@ fn main() {
 
   let proved = RawProver::<MatrixPoset<BitVec>>::prune(minimized);
   report(&proved);
+
+  if let Some(output) = args.output {
+    bincode::serialize_into(std::fs::File::create(output).unwrap(), &proved).unwrap();
+  }
 
   return;
   let mut last_diff: f64 = 1.;
