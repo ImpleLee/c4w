@@ -1,6 +1,6 @@
 use crate::states::*;
 
-pub trait SequenceStates: HasLength+std::marker::Sync+serde::Serialize {
+pub trait SequenceStates: HasLength+std::marker::Sync {
   type State: Copy;
   type Proxy: StateWithPiece<Self::State>;
   fn new(preview: usize, base_len: usize) -> Self;

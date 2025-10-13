@@ -29,7 +29,7 @@ pub trait HasLength {
   }
 }
 
-pub trait States: HasLength+std::marker::Sync+serde::Serialize {
+pub trait States: HasLength+std::marker::Sync {
   type State;
   type Branch;
   fn decode(&self, index: usize) -> Option<Self::State>;
