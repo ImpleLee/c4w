@@ -14,12 +14,13 @@ itertools = "0.14.0"
 average = "0.16"
 rayon = "1.10.0"
 num-integer = "0.1.46"
-arrayvec = "0.7.6"
+arrayvec = { version = "0.7.6", features = ["serde"] }
 dashmap = { version = "6.1.0", features = ["rayon"] }
 hopcroft-karp = "0.2.1"
 rs-graph = "0.21.0"
 bit-vec = "0.8.0"
 clap = { version = "4.5.48", features = ["derive"] }
+indicatif = { version = "0.18.0", features = ["rayon"] }
 
 [profile.release]
 lto = true
