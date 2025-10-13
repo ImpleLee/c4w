@@ -3,3 +3,6 @@ pub mod evaluator;
 pub mod minimizer;
 pub mod printer;
 pub mod states;
+pub mod prover;
+pub mod pruner;
+

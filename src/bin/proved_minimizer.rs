@@ -1,18 +1,10 @@
-mod basics;
-mod evaluator;
-mod minimizer;
-mod printer;
-mod prover;
-mod pruner;
-mod states;
+use c4w::basics::*;
+use c4w::evaluator::*;
+use c4w::minimizer::*;
 
-use basics::*;
-use evaluator::*;
-use minimizer::*;
-
-use prover::*;
-use pruner::*;
-use states::*;
+use c4w::prover::*;
+use c4w::pruner::*;
+use c4w::states::*;
 use std::collections::HashMap;
 use clap::Parser;
 use bit_vec::BitVec;
@@ -84,17 +76,4 @@ fn main() {
   if let Some(output) = args.output {
     bincode::serialize_into(std::fs::File::create(output).unwrap(), &proved).unwrap();
   }
-
-  return;
-  let mut last_diff: f64 = 1.;
-  const EPS: f64 = 1e-10;
-  let mut evaluator = ValueIterator::new(&minimized, EPS);
-  for (i, diff) in evaluator.by_ref().enumerate() {
-    let expected = (diff.log10() - EPS.log10()) / (last_diff.log10() - diff.log10());
-    eprintln!("{}/{:.2}: {}", i, expected + i as f64, diff);
-    last_diff = diff;
-  }
-
-  let values = evaluator.get_values();
-  // printer::MarkovAverage::print(&field2state, &values, &num2state);
 }
