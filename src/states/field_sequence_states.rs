@@ -21,7 +21,7 @@ impl<T: Clone> StateWithPiece<T> for (T, usize) {
   }
 }
 
-#[derive(serde::Serialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct FieldSequenceStates<S: SequenceStates> {
   fields: Vec<Field>,
   continuations: Continuation,
@@ -95,7 +95,7 @@ impl<S: SequenceStates> FieldSequenceStates<S> {
   }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct RandomSequenceStates {
   preview: usize,
   base_len: usize

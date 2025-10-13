@@ -1,7 +1,7 @@
 use crate::states::*;
 use rayon::prelude::*;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct MappedStates<T: States> {
   pub original: T,
   pub mapping: Vec<usize>,
@@ -31,7 +31,7 @@ impl<T: States> States for MappedStates<T> {
   }
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConcreteMappedStates<T: States> {
   pub original: T,
   pub mapping: Vec<usize>,
