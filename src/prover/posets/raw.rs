@@ -93,7 +93,7 @@ impl<V: BoolVec> Poset for MatrixPoset<V> {
       .collect::<Vec<_>>();
     let len_changed_edges =  {
       std::mem::swap(&mut self.edges, &mut checked_edges);
-      checked_edges.into_par_iter().zip(self.edges.par_iter())
+      (checked_edges, &self.edges).into_par_iter()
         .map(|(edges, check_edges)| {
         edges.iter().zip(check_edges.iter())
           .filter(|&(connected, checked)| connected != checked)

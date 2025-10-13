@@ -112,9 +112,8 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
       eprintln!("no node replacement");
       return false;
     }
-    self.mapping.iter_mut()
-      .zip(new_mapping)
-      .for_each(|(old, new)| {
+    (&mut self.mapping, &new_mapping).into_par_iter()
+      .for_each(|(old, &new)| {
         if new == 0 {
           return;
         }

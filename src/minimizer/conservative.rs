@@ -21,9 +21,8 @@ impl Minimizer for ConservMinimizer {
         (num, next, indices)
       }
     );
-    let mut state_order = state_order
-      .par_iter()
-      .zip(state_sorted.par_iter())
+    let mut state_order = (&state_order, &state_sorted)
+      .into_par_iter()
       .map(|(&i, &j)| (i, j))
       .collect::<Vec<_>>();
     state_order.par_sort_unstable_by_key(|&(i, _)| i);
