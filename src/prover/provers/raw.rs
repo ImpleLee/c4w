@@ -1,6 +1,7 @@
 use arrayvec::ArrayVec;
 use itertools::Itertools;
 use rayon::prelude::*;
+use indicatif::ProgressIterator;
 
 use std::{collections::{HashSet, HashMap}, marker::PhantomData};
 use crate::states::{States, GetNext, ConcreteMappedStates};
@@ -86,6 +87,8 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
     if largest_new_dag > 1 {
       eprintln!("largest new dag: {}", largest_new_dag);
       self.seeds.extend(prev_id_to_next.iter().flat_map(|v| v.iter().map(|&(_, i)| i)));
+    } else if largest_new_dag == 1 {
+      eprintln!("no node replacement");
     }
     let deltas = prev_id_to_next.iter()
       .map(|nexts| nexts.len())
@@ -96,6 +99,7 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
       })
       .collect_vec();
     prev_id_to_next.into_iter()
+      .progress()
       .enumerate()
       .for_each(|(node, v)| {
         if v.is_empty() {
@@ -109,7 +113,6 @@ impl<U: Poset, T: States> WorkingProver<T> for WorkingRawProver<U, T> {
         ));
       });
     if largest_new_dag == 1 {
-      eprintln!("no node replacement");
       return false;
     }
     (&mut self.mapping, &new_mapping).into_par_iter()

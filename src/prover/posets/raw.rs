@@ -1,4 +1,5 @@
 use rayon::prelude::*;
+use indicatif::ParallelProgressIterator;
 use bit_vec::BitVec;
 
 use super::Poset;
@@ -84,6 +85,7 @@ impl<V: BoolVec> Poset for MatrixPoset<V> {
   fn verify_edges(&mut self, verifier: impl std::marker::Sync+std::marker::Send+Fn(&Self, usize, usize) -> bool) -> bool {
     self.check();
     let mut checked_edges = self.edges.par_iter()
+      .progress_count(self.edges.len() as u64)
       .enumerate()
       .map(|(i, v)|
         (0..v.len())
