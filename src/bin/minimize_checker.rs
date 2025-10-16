@@ -47,15 +47,11 @@ fn main() {
   eprintln!("minimized2: nodes: {}, edges: {}, original: {}", minimized2.nexts.len(), minimized2.nexts.continuations.len(), minimized2.mapping.len());
   let values2 = value_iteration(&minimized2);
 
-  let mut max_diff: f64 = 0.0;
-
   for i in (0..minimized.original.len()).progress() {
     let v1 = values1[minimized.mapping[i]];
     let v2 = values2[minimized2.mapping[i]];
-    assert!((v1 - v2).abs() < EPS, "value mismatch at {}: {} vs {}", i, v1, v2);
-    max_diff = max_diff.max((v1 - v2).abs());
+    assert!(v1 == v2, "value mismatch at {}: {} vs {}", i, v1, v2);
   }
 
   eprintln!("values match");
-  eprintln!("max diff: {}", max_diff);
 }
