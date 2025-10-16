@@ -3,29 +3,25 @@ use average::{Estimate, Max, Merge};
 use rayon::prelude::*;
 
 pub struct ValueIterator<'a, T: States> {
-  values: Vec<f64>,
+  pub values: Vec<f64>,
   states: &'a T,
-  epsilon: f64
 }
 
-impl<'a, T: States> Evaluator<'a, T> for ValueIterator<'a, T> {
-  fn new(next: &'a T, epsilon: f64) -> Self {
-    let mut values = vec![0.0; next.len()];
+impl<'a, T: States> ValueIterator<'a, T> {
+  pub fn new(states: &'a T) -> Self {
+    let mut values = vec![0.0; states.len()];
     values.shrink_to_fit();
-    Self { values, states: next, epsilon }
-  }
-  fn get_values(self) -> Vec<f64> {
-    self.values
+    Self { values, states }
   }
 }
 
-impl<'a, T: States> Iterator for ValueIterator<'a, T> {
-  type Item = f64;
-  fn next(&mut self) -> Option<Self::Item> {
+impl<'a, T: States> Evaluator for ValueIterator<'a, T> {
+  type Item<'b> = (&'b [f64], f64) where Self: 'b;
+  fn next<'b>(&'b mut self) -> Self::Item<'b> {
     let (new_values, diffs): (Vec<_>, MyMax) = (0..self.values.len())
       .into_par_iter()
       .map(|j| {
-        let mut value = vec![];
+        let mut values = vec![];
         let mut counter_added = 0.;
         let state = self.states.decode(j).unwrap();
         for next in self.states.next_pieces(state) {
@@ -35,18 +31,19 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
             this_value.add(self.values[self.states.encode(&next_state).unwrap()]);
             added = true;
           }
-          value.push(this_value.max());
+          values.push(this_value.max());
           if added {
             counter_added += 1.;
           }
         }
-        value.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        let new_value = value
-          .iter()
-          .cloned()
-          .reduce(|a, b| a + b)
-          .map(|x| (x + counter_added) / value.len() as f64)
-          .unwrap_or(0.);
+        values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let new_value = if values.is_empty() {
+          -0.0
+        } else if values.iter().all(|&v| v == values[0]) {
+          values[0] + (counter_added > 0.) as u8 as f64
+        } else {
+          (values.iter().sum::<f64>() + counter_added) / values.len() as f64
+        };
         let old_value = self.values[j];
         let diff = (new_value - old_value).abs();
         (new_value, diff)
@@ -55,11 +52,7 @@ impl<'a, T: States> Iterator for ValueIterator<'a, T> {
     let diff = MyMax::max(&diffs);
     self.values = new_values;
     self.values.shrink_to_fit();
-    if diff < self.epsilon {
-      None
-    } else {
-      Some(diff)
-    }
+    (&self.values, diff)
   }
 }
 

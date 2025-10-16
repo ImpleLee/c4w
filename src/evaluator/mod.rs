@@ -5,7 +5,7 @@ mod loop_finder;
 
 use crate::states::*;
 
-pub trait Evaluator<'a, T: States>: Iterator<Item=f64> {
-  fn new(next: &'a T, epsilon: f64) -> Self;
-  fn get_values(self) -> Vec<f64>;
+pub trait Evaluator {
+  type Item<'a> where Self: 'a;
+  fn next<'a>(&'a mut self) -> Self::Item<'a>;
 }

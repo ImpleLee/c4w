@@ -21,15 +21,18 @@ const EPS: f64 = 1e-10;
 fn value_iteration(minimized: &impl States) -> Vec<f64> {
   let mut stderr = stderr();
   let eps_str = format!("{:.5}", -EPS.log10());
-  let mut evaluator = ValueIterator::new(minimized, EPS);
-  for diff in evaluator.by_ref() {
+  let mut evaluator = ValueIterator::new(minimized);
+  loop {
+    let (_, diff) = evaluator.next();
     queue!(stderr, cursor::MoveToColumn(0), terminal::Clear(crossterm::terminal::ClearType::CurrentLine)).unwrap();
     queue!(stderr, style::PrintStyledContent(format!("{:.5} / {}", -diff.log10(), eps_str).with(style::Color::Green))).unwrap();
     stderr.flush().unwrap();
+    if diff < EPS {
+      break;
+    }
   }
-
   eprintln!();
-  evaluator.get_values()
+  evaluator.values
 }
 
 fn main() {
